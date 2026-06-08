@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import api from "@/lib/api-client";
@@ -108,6 +108,8 @@ function FileUploadField({
   );
 }
 
+type ProfileStatus = "PENDING" | "APPROVED" | "REJECTED";
+
 export default function DriverOnboardingPage() {
   const router = useRouter();
 
@@ -123,6 +125,28 @@ export default function DriverOnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+
+  const [profileCheckLoading, setProfileCheckLoading] = useState(true);
+  const [existingProfileStatus, setExistingProfileStatus] = useState<ProfileStatus | null>(null);
+
+  useEffect(() => {
+    api
+      .get<{ status: ProfileStatus }>("/api/driver/profile")
+      .then(({ data }) => {
+        if (data.status === "APPROVED") {
+          document.cookie = "driver_verified=1; path=/; Max-Age=604800; SameSite=Lax";
+          router.replace("/driver/dashboard");
+        } else {
+          setExistingProfileStatus(data.status);
+        }
+      })
+      .catch((err) => {
+        if (err?.response?.status !== 404) {
+          setError("Error al verificar tu perfil.");
+        }
+      })
+      .finally(() => setProfileCheckLoading(false));
+  }, [router]);
 
   function handleFormChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.name === "vehiclePlate" ? e.target.value.toUpperCase() : e.target.value;
@@ -176,6 +200,73 @@ export default function DriverOnboardingPage() {
       setError(Array.isArray(msg) ? msg.join(", ") : msg);
       setLoading(false);
     }
+  }
+
+  if (profileCheckLoading) {
+    return (
+      <div className="page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100dvh" }}>
+        <div className="spinner spinner-lg" style={{ color: "var(--primary)" }} />
+      </div>
+    );
+  }
+
+  if (existingProfileStatus === "PENDING" || existingProfileStatus === "REJECTED") {
+    return (
+      <div
+        style={{
+          minHeight: "100dvh",
+          background: "linear-gradient(160deg, var(--primary-xpale) 0%, var(--bg) 60%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px 16px",
+        }}
+      >
+        <div style={{ width: "100%", maxWidth: 400, textAlign: "center" }} className="animate-slide-up">
+          {existingProfileStatus === "PENDING" ? (
+            <>
+              <div style={{ fontSize: "4rem", marginBottom: "16px" }}>⏳</div>
+              <h2 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "10px" }}>
+                Verificación en proceso
+              </h2>
+              <p className="text-muted mb-6" style={{ fontSize: "15px" }}>
+                Tus documentos ya fueron enviados y están siendo revisados por el equipo Moti.
+                Te notificaremos cuando seas aprobado.
+              </p>
+              <div className="card" style={{ textAlign: "left", marginBottom: "24px" }}>
+                <p className="text-sm text-muted">
+                  📞 ¿Tienes dudas?{" "}
+                  <strong>
+                    <a href="https://wa.me/3017953727" target="_blank" rel="noopener noreferrer">
+                      Contáctanos aquí
+                    </a>
+                  </strong>
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: "4rem", marginBottom: "16px" }}>❌</div>
+              <h2 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "10px" }}>
+                Perfil rechazado
+              </h2>
+              <p className="text-muted mb-6" style={{ fontSize: "15px" }}>
+                Tu perfil fue rechazado. Contacta al administrador para más información.
+              </p>
+              <a
+                href="https://wa.me/3017953727"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+                style={{ display: "block", width: "100%" }}
+              >
+                Contactar soporte
+              </a>
+            </>
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (done) {
@@ -269,7 +360,7 @@ export default function DriverOnboardingPage() {
           Datos de tu vehículo
         </h2>
         <p className="text-muted text-sm mb-6">
-          Esta información será verificada manualmente por el equipo Moti.
+          Esta información será verificada por el equipo Moti.
         </p>
 
         <form onSubmit={handleSubmit}>

@@ -27,6 +27,16 @@ export function proxy(request: NextRequest) {
       const home = ROLE_HOME[role] ?? '/';
       return NextResponse.redirect(new URL(home, request.url));
     }
+    if (
+      role === 'DRIVER' &&
+      pathname.startsWith('/driver') &&
+      !pathname.startsWith('/driver/onboarding')
+    ) {
+      const driverVerified = request.cookies.get('driver_verified')?.value;
+      if (!driverVerified) {
+        return NextResponse.redirect(new URL('/driver/onboarding', request.url));
+      }
+    }
   }
 
   if (sessionExists && (pathname === '/login' || pathname === '/signup')) {
