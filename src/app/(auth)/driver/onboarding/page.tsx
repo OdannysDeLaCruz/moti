@@ -178,7 +178,7 @@ export default function DriverOnboardingPage() {
     }
   }
 
-  if (true) {
+  if (done) {
     return (
       <div
         style={{
@@ -200,7 +200,7 @@ export default function DriverOnboardingPage() {
           </h2>
           <p className="text-muted mb-6" style={{ fontSize: "15px" }}>
             Tu perfil está siendo{" "}
-            <strong style={{ color: "var(--warning)" }}>verificado manualmente</strong>. Recibirás
+            <strong style={{ color: "var(--warning)" }}>verificado</strong>. Recibirás
             acceso completo una vez que el administrador apruebe tus documentos.
           </p>
 
