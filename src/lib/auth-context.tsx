@@ -1,0 +1,99 @@
+'use client';
+
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import api, { setAccessToken } from './api-client';
+
+export type UserRole = 'CLIENT' | 'DRIVER' | 'ADMIN';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  role: UserRole;
+  createdAt?: string;
+  driverProfile?: {
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    freeRidesUsed: number;
+    passExpiresAt: string | null;
+    vehiclePlate: string;
+    vehicleModel: string;
+  } | null;
+}
+
+interface AuthContextValue {
+  user: AuthUser | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (data: {
+    email: string;
+    password: string;
+    fullName: string;
+    phone: string;
+    role: UserRole;
+  }) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    if (typeof document !== 'undefined' && !document.cookie.includes('session_exists=')) {
+      setUser(null);
+      return;
+    }
+    try {
+      const { data } = await api.get<AuthUser>('/api/users/me');
+      setUser(data);
+    } catch {
+      setUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshUser().finally(() => setLoading(false));
+  }, [refreshUser]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { data } = await api.post<{ user: AuthUser; accessToken: string }>('/auth/login', {
+      email,
+      password,
+    });
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+  }, []);
+
+  const register = useCallback(
+    async (form: { email: string; password: string; fullName: string; phone: string; role: UserRole }) => {
+      const { data } = await api.post<{ user: AuthUser; accessToken: string }>('/auth/register', form);
+      setAccessToken(data.accessToken);
+      setUser(data.user);
+    },
+    [],
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {}
+    setAccessToken(null);
+    setUser(null);
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}
