@@ -8,6 +8,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { Toast } from "@/components/ui/Toast";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { playStatusNegative } from "@/lib/sounds";
 import { useRideSocket } from "@/hooks/useRideSocket";
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -32,6 +33,7 @@ type UpdatableStatus = "HEADING_TO_PICKUP" | "AT_PICKUP" | "IN_PROGRESS" | "COMP
 
 export default function OngoingRidePage() {
   const router = useRouter();
+  useAuthGuard('DRIVER');
   const { id } = useParams<{ id: string }>();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);

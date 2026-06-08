@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import BottomNav from "@/components/ui/BottomNav";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCOP } from "@/lib/whatsapp";
@@ -25,6 +26,7 @@ const CLIENT_NAV = [
 
 export default function ClientHistoryPage() {
   const router = useRouter();
+  useAuthGuard('CLIENT');
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
 

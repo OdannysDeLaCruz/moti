@@ -11,6 +11,7 @@ export interface AuthUser {
   fullName: string;
   phone: string;
   role: UserRole;
+  verifiedAt?: string | null;
   createdAt?: string;
   driverProfile?: {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -43,10 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = useCallback(async () => {
-    if (typeof document !== 'undefined' && !document.cookie.includes('session_exists=')) {
-      setUser(null);
-      return;
-    }
     try {
       const { data } = await api.get<AuthUser>('/api/users/me');
       setUser(data);

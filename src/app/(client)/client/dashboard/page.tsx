@@ -6,6 +6,7 @@ import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 import LocationModal, { LocationPoint } from "@/components/LocationModal";
 
@@ -31,7 +32,8 @@ interface ActiveRide {
 
 export default function ClientDashboardPage() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user } = useAuthGuard('CLIENT');
+  const { logout } = useAuth();
 
   const [menuOpen,   setMenuOpen]   = useState(false);
   const [modalMode,  setModalMode]  = useState<"origin" | "dest" | null>(null);

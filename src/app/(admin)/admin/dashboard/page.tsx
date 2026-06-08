@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api-client";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 
 interface Stats {
@@ -13,6 +14,7 @@ interface Stats {
 
 export default function AdminDashboardPage() {
   const router = useRouter();
+  useAuthGuard('ADMIN');
   const { logout } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
 

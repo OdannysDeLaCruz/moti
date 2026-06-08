@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import Button from "@/components/ui/Button";
+
+const ROLE_HOME: Record<string, string> = {
+  CLIENT: '/client/dashboard',
+  DRIVER: '/driver/dashboard',
+  ADMIN: '/admin/dashboard',
+};
 
 type Role = "CLIENT" | "DRIVER";
 
@@ -15,7 +21,11 @@ const ROLES: { value: Role; label: string; desc: string }[] = [
 
 export default function SignupPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) router.replace(ROLE_HOME[user.role] ?? '/');
+  }, [user, authLoading, router]);
 
   const [form, setForm] = useState({
     fullName: "",

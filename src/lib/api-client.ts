@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = '/backend';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 let accessToken: string | null = null;
 
@@ -57,8 +57,6 @@ api.interceptors.response.use(
         failedQueue = [];
         setAccessToken(null);
         if (typeof window !== 'undefined' && !['/login', '/signup'].includes(window.location.pathname)) {
-          document.cookie = 'session_exists=; Max-Age=0; path=/';
-          document.cookie = 'user_role=; Max-Age=0; path=/';
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);

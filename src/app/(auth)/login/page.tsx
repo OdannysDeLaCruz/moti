@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import Button from "@/components/ui/Button";
 
+const ROLE_HOME: Record<string, string> = {
+  CLIENT: '/client/dashboard',
+  DRIVER: '/driver/dashboard',
+  ADMIN: '/admin/dashboard',
+};
+
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) router.replace(ROLE_HOME[user.role] ?? '/');
+  }, [user, authLoading, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +32,6 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // El middleware redirige según la cookie user_role, pero hacemos push como fallback
       router.push("/");
     } catch {
       setError("Correo o contraseña incorrectos.");

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import Button from "@/components/ui/Button";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
@@ -14,6 +15,7 @@ interface Config {
 
 export default function AdminConfigPage() {
   const router = useRouter();
+  useAuthGuard('ADMIN');
   const [config, setConfig] = useState<Config | null>(null);
   const [form, setForm] = useState({ minRidePrice: "", maxFreeRides: "", dailyPassPrice: "" });
   const [loading, setLoading] = useState(true);

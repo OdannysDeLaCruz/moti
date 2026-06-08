@@ -8,7 +8,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import RideDetailModal from "@/components/RideDetailModal";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
-import { useAuth } from "@/lib/auth-context";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Toast } from "@/components/ui/Toast";
 import { useDriverFeed, NewRideEvent } from "@/hooks/useDriverFeed";
 import { playNewRequest, playStatusNegative } from "@/lib/sounds";
@@ -31,7 +31,7 @@ const DRIVER_NAV = [
 
 export default function DriverDashboardPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthGuard('DRIVER');
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelToast, setCancelToast] = useState(false);

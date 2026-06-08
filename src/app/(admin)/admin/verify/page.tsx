@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import Button from "@/components/ui/Button";
 import api from "@/lib/api-client";
 
@@ -296,6 +297,7 @@ function DriverCard({
 
 export default function AdminVerifyPage() {
   const router = useRouter();
+  useAuthGuard('ADMIN');
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);

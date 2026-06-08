@@ -7,6 +7,7 @@ import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useRideSocket } from "@/hooks/useRideSocket";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -27,6 +28,7 @@ interface Ride {
 
 export default function DriverRidePage() {
   const router = useRouter();
+  useAuthGuard('DRIVER');
   const { id } = useParams<{ id: string }>();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);

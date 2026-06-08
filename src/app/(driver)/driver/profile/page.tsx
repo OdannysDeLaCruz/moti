@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import BottomNav from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 
 interface DriverData {
@@ -28,7 +29,8 @@ const DRIVER_NAV = [
 
 export default function DriverProfilePage() {
   const router = useRouter();
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuthGuard('DRIVER');
+  const { logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
 
   async function handleSignOut() {
