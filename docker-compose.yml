@@ -1,0 +1,15 @@
+services:
+  moti-database:
+    image: postgres:16-alpine
+    container_name: moti-db
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: moti
+      POSTGRES_PASSWORD: moti123
+      POSTGRES_DB: moti_dev
+    volumes:
+      - moti-data:/var/lib/postgresql/data
+volumes:
+  moti-data:
