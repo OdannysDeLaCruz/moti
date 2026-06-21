@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import MapboxAbortSuppressor from "@/components/MapboxAbortSuppressor";
 
 export const metadata: Metadata = {
   title: "Moti – Carreras y Domicilios en Tiempo Real",
@@ -34,6 +35,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body>
+        <MapboxAbortSuppressor />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

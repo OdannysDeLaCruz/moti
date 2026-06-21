@@ -163,7 +163,9 @@ export default function MapView({
     const token = mapboxgl.accessToken;
     if (!token) return;
 
-    fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson&overview=full&access_token=${token}`)
+    const controller = new AbortController();
+
+    fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson&overview=full&access_token=${token}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         if (!data.routes?.length) return;
@@ -182,7 +184,9 @@ export default function MapView({
           }
         });
       })
-      .catch(console.error);
+      .catch((err) => { if (err.name !== "AbortError") console.error(err); });
+
+    return () => controller.abort();
   }, [pins]);
 
   return (
