@@ -139,10 +139,10 @@ input, button, select, textarea { font-family: inherit; }
 /* ─── Cards ─────────────────────────────────────────────────────────────────── */
 .card {
   background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
+  /* border: 1px solid var(--border); */
+  /* border-radius: var(--r-lg); */
   padding: 20px;
-  box-shadow: var(--shadow-sm);
+  /* box-shadow: var(--shadow-sm); */
 }
 
 .card-ghost {
