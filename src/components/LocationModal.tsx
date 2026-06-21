@@ -251,7 +251,7 @@ export default function LocationModal({
                 if (result && result.features && result.features.length > 0) {
                   const feature = result.features[0];
                   const [lng, lat] = feature.geometry.coordinates;
-                  const addressName = feature.properties.name || feature.properties.place_name || feature.properties.full_address || "";
+                  const addressName = feature.properties.name || feature.properties.place_formatted || feature.properties.full_address || "";
                   setDestText(addressName);
                   setDestPin({ lat, lng });
                   setMapCenter([lat, lng]);
@@ -320,7 +320,7 @@ export default function LocationModal({
                     if (result && result.features && result.features.length > 0) {
                       const feature = result.features[0];
                       const [lng, lat] = feature.geometry.coordinates;
-                      const addressName = feature.properties.name || feature.properties.place_name || feature.properties.full_address || "";
+                      const addressName = feature.properties.name || feature.properties.place_formatted || feature.properties.full_address || "";
                       setDestText(addressName);
                       setDestPin({ lat, lng });
                       setMapCenter([lat, lng]);
