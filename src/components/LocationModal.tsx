@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
+import { SearchBox } from "@mapbox/search-js-react";
 
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
@@ -27,24 +28,34 @@ interface LocationModalProps {
 }
 
 async function reverseGeocode(lat: number, lng: number): Promise<string> {
+  const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
+  if (!token) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=es`,
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&language=es&limit=1`
     );
     const data = await res.json();
-    const a = data.address ?? {};
-    const road = a.amenity ?? a.residential ?? a.road ?? a.pedestrian ?? a.path;
-    const area = a.suburb ?? a.neighbourhood ?? a.village ?? a.town ?? a.city ?? a.county;
-    const parts = [road, area].filter(Boolean);
-
-    const address = `${data.display_name?.split(",")[0]} ${data.display_name?.split(",")[1]}`
-    return address
-      ? address
-      : parts.join(", ");
+    if (data.features && data.features.length > 0) {
+      const feat = data.features[0];
+      return feat.place_name || feat.text || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    }
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   } catch {
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   }
 }
+
+const searchBoxTheme = {
+  variables: {
+    fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+    borderRadius: "14px",
+    border: "1.5px solid var(--border-strong)",
+    background: "var(--bg)",
+    colorText: "var(--text)",
+    colorPlaceholder: "var(--text-dim)",
+    boxShadow: "none",
+  }
+};
 
 export default function LocationModal({
   mode,
@@ -70,6 +81,8 @@ export default function LocationModal({
   const [showDestMap, setShowDestMap] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchBoxTextRef = useRef<any>(null);
+  const searchBoxMapRef = useRef<any>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Skip the first moveend that fires from the initial flyTo animation
   const skipInitialMoveEndRef = useRef(false);
@@ -108,7 +121,12 @@ export default function LocationModal({
       setGeocoding(false);
       setShowDestMap(false);
       setMapCenter(originPoint ? [originPoint.lat, originPoint.lng] : [10.4631, -73.2532]);
-      setTimeout(() => inputRef.current?.focus(), 150);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        if (searchBoxTextRef.current) {
+          searchBoxTextRef.current.focus();
+        }
+      }, 150);
     }
 
     return () => {
@@ -142,6 +160,8 @@ export default function LocationModal({
         const address = await reverseGeocode(lat, lng);
         setGeocoding(false);
         setDestText(address);
+        if (searchBoxTextRef.current) searchBoxTextRef.current.value = address;
+        if (searchBoxMapRef.current) searchBoxMapRef.current.value = address;
       }, 500);
     }
   }
@@ -215,20 +235,29 @@ export default function LocationModal({
       {/* DESTINATION — text-only view (no map yet) */}
       {mode === "dest" && !showDestMap && (
         <div style={{ padding: "24px 16px", flexShrink: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ position: "relative" }}>
-            <span style={{
-              position: "absolute", left: "12px", top: "50%",
-              transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none",
-            }}>
-              🎯
-            </span>
-            <input
-              ref={inputRef}
-              type="text"
+          <div style={{ position: "relative", width: "100%" }}>
+            <SearchBox
+              ref={searchBoxTextRef}
+              accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || ""}
+              options={{
+                language: "es",
+                country: "co",
+                types: "address,poi,neighborhood,postcode,district,place",
+              }}
               placeholder="Escribe la dirección de destino..."
-              value={destText}
-              onChange={(e) => setDestText(e.target.value)}
-              style={{ paddingLeft: "36px" }}
+              theme={searchBoxTheme}
+              onChange={(val) => setDestText(val)}
+              onRetrieve={(result) => {
+                if (result && result.features && result.features.length > 0) {
+                  const feature = result.features[0];
+                  const [lng, lat] = feature.geometry.coordinates;
+                  const addressName = feature.properties.name || feature.properties.place_name || feature.properties.full_address || "";
+                  setDestText(addressName);
+                  setDestPin({ lat, lng });
+                  setMapCenter([lat, lng]);
+                  setShowDestMap(true);
+                }
+              }}
             />
           </div>
 
@@ -275,20 +304,28 @@ export default function LocationModal({
           {/* Destination text input shown above map */}
           {mode === "dest" && (
             <div style={{ padding: "10px 16px 4px", flexShrink: 0 }}>
-              <div style={{ position: "relative" }}>
-                <span style={{
-                  position: "absolute", left: "12px", top: "50%",
-                  transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none",
-                }}>
-                  🎯
-                </span>
-                <input
-                  ref={inputRef}
-                  type="text"
+              <div style={{ position: "relative", width: "100%" }}>
+                <SearchBox
+                  ref={searchBoxMapRef}
+                  accessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || ""}
+                  options={{
+                    language: "es",
+                    country: "co",
+                    types: "address,poi,neighborhood,postcode,district,place",
+                  }}
                   placeholder="O escribe la dirección directamente..."
-                  value={destText}
-                  onChange={(e) => setDestText(e.target.value)}
-                  style={{ paddingLeft: "36px" }}
+                  theme={searchBoxTheme}
+                  onChange={(val) => setDestText(val)}
+                  onRetrieve={(result) => {
+                    if (result && result.features && result.features.length > 0) {
+                      const feature = result.features[0];
+                      const [lng, lat] = feature.geometry.coordinates;
+                      const addressName = feature.properties.name || feature.properties.place_name || feature.properties.full_address || "";
+                      setDestText(addressName);
+                      setDestPin({ lat, lng });
+                      setMapCenter([lat, lng]);
+                    }
+                  }}
                 />
               </div>
             </div>

@@ -2,13 +2,18 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
-import LocationModal, { LocationPoint } from "@/components/LocationModal";
+import type { LocationPoint } from "@/components/LocationModal";
+
+const LocationModal = dynamic(() => import("@/components/LocationModal"), {
+  ssr: false,
+});
 
 const PRICE_STEP = 500;
 const MIN_PRICE  = 4000;

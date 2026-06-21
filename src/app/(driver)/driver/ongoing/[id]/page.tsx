@@ -22,6 +22,8 @@ interface Ride {
   destAddress: string;
   originLat: number;
   originLng: number;
+  destLat?: number | null;
+  destLng?: number | null;
   finalPrice: string | null;
   status: string;
   rideType: "TRANSPORT" | "DELIVERY";
@@ -41,6 +43,7 @@ export default function OngoingRidePage() {
   const [cancelling, setCancelling] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelledByClient, setCancelledByClient] = useState(false);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const locationChannelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
@@ -68,13 +71,29 @@ export default function OngoingRidePage() {
   // Share location while heading to pickup and during the trip
   useEffect(() => {
     if (!sharingLocation) return;
-    const interval = setInterval(() => {
-      if (!navigator.geolocation || !locationChannelRef.current) return;
+
+    // Get initial position immediately
+    if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setDriverLocation(coords);
         locationChannelRef.current?.send({
           type: "broadcast",
           event: "driver:location",
-          payload: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          payload: coords,
+        });
+      });
+    }
+
+    const interval = setInterval(() => {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setDriverLocation(coords);
+        locationChannelRef.current?.send({
+          type: "broadcast",
+          event: "driver:location",
+          payload: coords,
         });
       });
     }, 10000);
@@ -149,6 +168,29 @@ export default function OngoingRidePage() {
   const isDone            = isCompleted || isCancelled;
   const canCancel         = isAccepted || isHeading || isAtPickup;
 
+  const originPin = { lat: ride.originLat, lng: ride.originLng };
+  const destPin = ride.destLat != null && ride.destLng != null && (ride.destLat !== 0 || ride.destLng !== 0)
+    ? { lat: ride.destLat, lng: ride.destLng }
+    : null;
+
+  const mapPins = [
+    { lat: originPin.lat, lng: originPin.lng, label: "Recogida", color: "green" as const },
+    ...(ride.status === "IN_PROGRESS" && destPin
+      ? [{ lat: destPin.lat, lng: destPin.lng, label: "Destino", color: "red" as const }]
+      : []),
+    ...(driverLocation
+      ? [{ lat: driverLocation.lat, lng: driverLocation.lng, label: "Tú", icon: "moto" as const }]
+      : []),
+  ];
+
+  const mapCenter: [number, number] = ride.status === "IN_PROGRESS" && destPin
+    ? [(originPin.lat + destPin.lat) / 2, (originPin.lng + destPin.lng) / 2]
+    : driverLocation
+    ? [driverLocation.lat, driverLocation.lng]
+    : [originPin.lat, originPin.lng];
+
+  const mapZoom = ride.status === "IN_PROGRESS" && destPin ? 13 : 15;
+
   return (
     <div className="page">
       {cancelledByClient && (
@@ -178,12 +220,10 @@ export default function OngoingRidePage() {
 
       <div className="page-content" style={{ paddingBottom: "32px" }}>
         <MapView
-          center={[ride.originLat ?? 4.711, ride.originLng ?? -74.072]}
-          zoom={15}
+          center={mapCenter}
+          zoom={mapZoom}
           height={220}
-          pins={[
-            { lat: ride.originLat ?? 4.711, lng: ride.originLng ?? -74.072, label: "Recogida", color: "green" as const },
-          ]}
+          pins={mapPins}
         />
 
         {/* Route info */}
