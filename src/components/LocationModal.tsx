@@ -4,6 +4,25 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { SearchBox } from "@mapbox/search-js-react";
 
+interface ReverseFeature {
+  properties: {
+    name: string;
+    feature_type: "poi" | "address" | "street" | "place" | string;
+    address: string;
+    full_address?: string;
+    place_formatted?: string;
+  };
+  geometry: {
+    coordinates: [number, number]; // [lng, lat]
+  };
+}
+
+export interface ReverseGeocodeResponse {
+  type: "FeatureCollection";
+  features: ReverseFeature[];
+  attribution: string;
+}
+
 const MapView = dynamic(() => import("@/components/MapView"), {
   ssr: false,
   loading: () => (
@@ -27,19 +46,54 @@ interface LocationModalProps {
   onClose: () => void;
 }
 
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
+function getNombreLegible(features: ReverseFeature[]): string {
+  // 1. Busca el primer POI (nombre real de lugar/negocio)
+  const poi = features.find((f) => f.properties.feature_type === "poi");
+  if (poi) return poi.properties.full_address || poi.properties.address ||poi.properties.name;
+
+  // 2. Si no hay POI, usa la dirección
+  const address = features.find((f) => f.properties.feature_type === "address");
+  if (address) return address.properties.full_address || address.properties.address;
+
+  // 3. Fallback al primero que venga
+  return features[0]?.properties.name || "";
+}
+
+// async function reverseGeocode(lat: number, lng: number, limit = 1): Promise<string> {
+//   const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
+//   if (!token) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+//   try {
+//     const res = await fetch(
+//       // `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&language=es&limit=1&types=address` // sessions
+//       `https://api.mapbox.com/search/searchbox/v1/reverse?longitude=${lng}&latitude=${lat}&access_token=${token}&language=es&limit=${limit}&types=address`
+//     );
+//     const data = await res.json();
+//     if (data.features && data.features.length > 0) {
+//       const feat = data.features[0];
+//       return feat.place_name || feat.text || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+//     }
+//     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+//   } catch {
+//     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+//   }
+// }
+
+async function reverseGeocode(lat: number, lng: number, limit = 5): Promise<string> {
   const token = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
   if (!token) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   try {
     const res = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&language=es&limit=1`
+      // `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${token}&language=es&limit=1&types=address` // sessions
+      `https://api.mapbox.com/search/searchbox/v1/reverse?longitude=${lng}&latitude=${lat}&access_token=${token}&language=es&limit=${limit}`
     );
-    const data = await res.json();
-    if (data.features && data.features.length > 0) {
-      const feat = data.features[0];
-      return feat.place_name || feat.text || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    }
-    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+    const data: ReverseGeocodeResponse = await res.json();
+
+    if (!data.features || data.features.length === 0) {
+    return "";
+  }
+
+    return getNombreLegible(data.features);
   } catch {
     return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   }
@@ -78,7 +132,7 @@ export default function LocationModal({
   const [destText, setDestText] = useState("");
   const [destPin, setDestPin] = useState<{ lat: number; lng: number } | null>(null);
   // Controls whether the map is visible in dest mode
-  const [showDestMap, setShowDestMap] = useState(false);
+  const [showDestMap, setShowDestMap] = useState(true);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const searchBoxTextRef = useRef<any>(null);
@@ -107,7 +161,7 @@ export default function LocationModal({
           // Geocode immediately — don't wait for moveend/flyTo
           setOriginCoords({ lat, lng });
           setGeocoding(true);
-          const address = await reverseGeocode(lat, lng);
+          const address = await reverseGeocode(lat, lng, 1);
           setGeocoding(false);
           setOriginAddress(address);
         },
@@ -149,7 +203,7 @@ export default function LocationModal({
       setOriginAddress("");
       debounceRef.current = setTimeout(async () => {
         setGeocoding(true);
-        const address = await reverseGeocode(lat, lng);
+        const address = await reverseGeocode(lat, lng, 1);
         setGeocoding(false);
         setOriginAddress(address);
       }, 500);
@@ -157,7 +211,7 @@ export default function LocationModal({
       setDestPin({ lat, lng });
       debounceRef.current = setTimeout(async () => {
         setGeocoding(true);
-        const address = await reverseGeocode(lat, lng);
+        const address = await reverseGeocode(lat, lng, 5);
         setGeocoding(false);
         setDestText(address);
         if (searchBoxTextRef.current) searchBoxTextRef.current.value = address;
@@ -228,7 +282,7 @@ export default function LocationModal({
           ←
         </button>
         <span style={{ flex: 1, fontWeight: 700, fontSize: "17px" }}>
-          {mode === "origin" ? "¿Desde dónde sales?" : "¿A dónde vas?"}
+          {mode === "origin" ? "¿A donde pasamos por ti?" : "¿A dónde vas?"}
         </span>
       </div>
 
