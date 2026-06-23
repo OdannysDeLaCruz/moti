@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import Button from "@/components/ui/Button";
 import api from "@/lib/api-client";
+import { Camera, Bike, CheckCircle, User, AlertTriangle } from "lucide-react";
 
 interface DriverProfile {
   status: string;
@@ -50,7 +51,7 @@ function DocThumb({
           minHeight: "80px",
         }}
       >
-        <span style={{ fontSize: "1.2rem", opacity: 0.4 }}>📷</span>
+        <span style={{ display: "flex", justifyContent: "center", opacity: 0.4 }}><Camera size={20} /></span>
         <span style={{ fontSize: "10px", color: "var(--text-dim)", textAlign: "center" }}>
           Sin foto
         </span>
@@ -138,40 +139,26 @@ function DriverCard({
             }}
           />
         ) : (
-          <div
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: "50%",
-              background: "var(--surface-2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.4rem",
-              flexShrink: 0,
+          <div style={{
+              width: 52, height: 52, borderRadius: "50%",
+              background: "var(--surface-2)", display: "flex", alignItems: "center",
+              justifyContent: "center", flexShrink: 0,
               border: "2px dashed var(--border-strong)",
-            }}
-          >
-            👤
-          </div>
+            }}>
+              <User size={22} color="var(--text-muted)" />
+            </div>
         )}
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
             <p style={{ fontWeight: 700, fontSize: "15px", lineHeight: 1.3 }}>{driver.fullName}</p>
             {hasMissingDocs && (
-              <span
-                style={{
-                  fontSize: "10px",
-                  background: "var(--warning-pale)",
-                  color: "var(--warning)",
-                  borderRadius: "var(--r-full)",
-                  padding: "2px 8px",
-                  fontWeight: 700,
-                  flexShrink: 0,
-                }}
-              >
-                ⚠ Docs incompletos
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: "3px",
+                fontSize: "10px", background: "var(--warning-pale)", color: "var(--warning)",
+                borderRadius: "var(--r-full)", padding: "2px 8px", fontWeight: 700, flexShrink: 0,
+              }}>
+                <AlertTriangle size={10} /> Docs incompletos
               </span>
             )}
           </div>
@@ -192,7 +179,7 @@ function DriverCard({
           alignItems: "center",
         }}
       >
-        <span style={{ fontSize: "1.2rem" }}>{p.vehicleType === "MOTO" ? "🏍️" : "🚲"}</span>
+        <span style={{ display: "flex" }}>{p.vehicleType === "MOTO" ? <Bike size={18} /> : <Bike size={18} style={{ opacity: 0.6 }} />}</span>
         <div style={{ flex: 1 }}>
           <span style={{ fontWeight: 600, fontSize: "13px" }}>{p.vehicleModel}</span>
           {p.vehiclePlate && (
@@ -286,7 +273,7 @@ function DriverCard({
               loading={processing === `${driver.id}-APPROVE`}
               onClick={() => onVerify(driver.id, "APPROVE")}
             >
-              ✓ Aprobar
+              Aprobar
             </Button>
           </div>
         )}
@@ -328,7 +315,8 @@ export default function AdminVerifyPage() {
         action === "APPROVE",
       );
     } catch (err: unknown) {
-      const msg = (err as any)?.response?.data?.message ?? "Error al procesar";
+      const response = (err as { response?: { data?: { message?: string } } }).response;
+      const msg = response?.data?.message ?? "Error al procesar";
       showToast(Array.isArray(msg) ? msg.join(", ") : msg, false);
     } finally {
       setProcessing(null);
@@ -388,7 +376,7 @@ export default function AdminVerifyPage() {
             animation: "fadeIn 0.2s ease",
           }}
         >
-          {toast.ok ? "✓" : "⚠"} {toast.msg}
+          {toast.ok ? "✓" : "!"} {toast.msg}
         </div>
       )}
 
@@ -399,7 +387,9 @@ export default function AdminVerifyPage() {
           </div>
         ) : drivers.length === 0 ? (
           <div className="empty-state" style={{ paddingTop: "60px" }}>
-            <div style={{ fontSize: "3rem", marginBottom: "12px" }}>✅</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+              <CheckCircle size={48} color="var(--success)" />
+            </div>
             <p className="font-semibold" style={{ fontSize: "17px" }}>Sin conductores pendientes</p>
             <p className="text-sm text-muted" style={{ marginTop: "6px" }}>
               Todos los perfiles han sido revisados.

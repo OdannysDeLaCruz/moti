@@ -1,5 +1,6 @@
 "use client";
 
+import { Bike } from "lucide-react";
 import { formatCOP } from "@/lib/whatsapp";
 
 interface Ride {
@@ -134,9 +135,10 @@ export default function RideDetailModal({
             {/* Type badge */}
             <span
               className={`badge ${ride.rideType === "DELIVERY" ? "badge-accent" : "badge-active"}`}
-              style={{ marginBottom: 12, display: "inline-flex" }}
+              style={{ marginBottom: 12, display: "inline-flex", alignItems: "center", gap: "4px" }}
             >
-              {ride.rideType === "DELIVERY" ? "🛵 Domicilio" : "🏍️ Carrera"}
+              <Bike size={12} />
+              {ride.rideType === "DELIVERY" ? "Domicilio" : "Carrera"}
             </span>
 
             {/* Route — A and B connected by vertical line */}

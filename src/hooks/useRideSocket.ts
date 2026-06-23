@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { getSupabaseClient } from '../lib/supabase/client';
 
 export interface RideOfferEvent {
@@ -39,7 +39,7 @@ interface Handlers {
 
 export function useRideSocket(rideId: string | undefined, handlers: Handlers) {
   const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+  useLayoutEffect(() => { handlersRef.current = handlers; });
 
   useEffect(() => {
     if (!rideId) return;

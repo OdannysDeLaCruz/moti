@@ -1,5 +1,5 @@
 /** Recursively convert BigInt fields to strings for JSON serialization. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// @typescript-eslint/no-explicit-any
 export function serializeBigInt<T>(obj: T): T {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj === "bigint") return obj.toString() as unknown as T;

@@ -7,6 +7,7 @@ import BottomNav from "@/components/ui/BottomNav";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
+import { ClipboardList } from "lucide-react";
 
 interface Ride {
   id: string;
@@ -50,7 +51,7 @@ export default function ClientHistoryPage() {
           </div>
         ) : rides.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📋</div>
+            <div className="empty-state-icon"><ClipboardList size={32} /></div>
             <p className="font-semibold">Sin carreras aún</p>
             <p className="text-sm">Tus carreras aparecerán aquí.</p>
             <button

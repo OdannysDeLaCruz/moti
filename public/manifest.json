@@ -1,6 +1,6 @@
 {
-  "name": "Moti – Carreras en Tiempo Real",
-  "short_name": "Moti",
+  "name": "Motu – Carreras en Tiempo Real",
+  "short_name": "Motu",
   "description": "Conecta con conductores verificados en moto o bici.",
   "start_url": "/",
   "display": "standalone",

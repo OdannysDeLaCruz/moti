@@ -13,6 +13,7 @@ import { playStatusNegative } from "@/lib/sounds";
 import { useRideSocket } from "@/hooks/useRideSocket";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { MapPin, Navigation, Flag, FileText, Radio } from "lucide-react";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -174,7 +175,7 @@ export default function OngoingRidePage() {
     <>
       {cancelledByClient && (
         <Toast
-          type="error" icon="❌" message="Carrera cancelada"
+          type="error" icon="x" message="Carrera cancelada"
           subMessage="El cliente canceló la carrera"
           actionLabel="Volver al panel"
           onAction={() => router.push("/driver/dashboard")}
@@ -228,14 +229,14 @@ export default function OngoingRidePage() {
             <div className="card" style={{ margin: 0 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: "1rem", marginTop: "2px" }}>📍</span>
+                  <MapPin size={16} style={{ color: "var(--success)", marginTop: "2px", flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>Origen</div>
                     <div style={{ fontSize: "14px", fontWeight: 500 }}>{ride.originAddress}</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: "1rem", marginTop: "2px" }}>🎯</span>
+                  <Navigation size={16} style={{ color: "var(--danger)", marginTop: "2px", flexShrink: 0 }} />
                   <div>
                     <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>Destino</div>
                     <div style={{ fontSize: "14px", fontWeight: 500 }}>{ride.destAddress}</div>
@@ -253,7 +254,7 @@ export default function OngoingRidePage() {
             {ride.notes && (
               <div className="card" style={{ margin: 0, background: "var(--primary-xpale)", border: "1.5px solid rgba(37,99,235,0.15)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                  <span>📝</span>
+                  <FileText size={14} style={{ color: "var(--primary)" }} />
                   <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase" }}>Nota del cliente</span>
                 </div>
                 <p style={{ fontSize: "14px", color: "var(--text)", lineHeight: 1.5, margin: 0 }}>{ride.notes}</p>
@@ -273,14 +274,17 @@ export default function OngoingRidePage() {
             </div>
 
             {sharingLocation && (
-              <div style={{ fontSize: "12px", color: "var(--primary)", textAlign: "center", fontWeight: 600 }}>
-                📡 Compartiendo ubicación con el cliente
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", fontSize: "12px", color: "var(--primary)", fontWeight: 600 }}>
+                <Radio size={14} />
+                Compartiendo ubicación con el cliente
               </div>
             )}
 
             {isCompleted && (
               <div className="card" style={{ background: "var(--success-pale)", border: "1.5px solid rgba(22,163,74,0.25)", textAlign: "center", padding: "20px" }}>
-                <div style={{ fontSize: "2rem", marginBottom: "8px" }}>🏁</div>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: "8px" }}>
+                  <Flag size={28} color="var(--success)" />
+                </div>
                 <p style={{ fontWeight: 700, fontSize: "16px", color: "var(--success)" }}>Carrera completada</p>
                 <p style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px" }}>Volviendo al panel...</p>
               </div>
@@ -289,10 +293,10 @@ export default function OngoingRidePage() {
 
             {/* Action buttons */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {isAccepted  && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("HEADING_TO_PICKUP")}>🏍️ Voy en camino</Button>}
-              {isHeading   && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("AT_PICKUP")}>📍 Ya estoy aquí</Button>}
-              {isAtPickup  && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("IN_PROGRESS")}>🚀 Empezar ruta</Button>}
-              {isInProgress && <Button variant="success" fullWidth size="lg" loading={updating} onClick={() => updateStatus("COMPLETED")}>🏁 Terminar ruta</Button>}
+              {isAccepted  && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("HEADING_TO_PICKUP")}>Voy en camino</Button>}
+              {isHeading   && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("AT_PICKUP")}>Ya estoy aquí</Button>}
+              {isAtPickup  && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("IN_PROGRESS")}>Empezar ruta</Button>}
+              {isInProgress && <Button variant="success" fullWidth size="lg" loading={updating} onClick={() => updateStatus("COMPLETED")}>Terminar ruta</Button>}
 
               {canCancel && (!confirmCancel ? (
                 <Button variant="ghost" fullWidth onClick={() => setConfirmCancel(true)}>Cancelar carrera</Button>

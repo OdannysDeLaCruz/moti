@@ -72,29 +72,37 @@ export default function LocationModal({
   const isOpen = mode !== null;
 
   const [gpsLoading, setGpsLoading] = useState(false);
-  const [gpsError,   setGpsError]   = useState("");
+  const [gpsError, setGpsError] = useState("");
 
-  const [originCoords,  setOriginCoords]  = useState<{ lat: number; lng: number } | null>(null);
+  const [originCoords, setOriginCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [originAddress, setOriginAddress] = useState("");
 
   const [destText, setDestText] = useState("");
-  const [destPin,  setDestPin]  = useState<{ lat: number; lng: number } | null>(null);
+  const [destPin, setDestPin] = useState<{ lat: number; lng: number } | null>(null);
 
   // Separate ref per mode — prevents stale ref after remount
-  const searchBoxRef = useRef<any>(null);
+  const searchBoxRef = useRef(null);
 
   // Sync state when modal opens for a specific mode
+  // Sync state when modal opens for a specific mode (render-time reset, no effect)
+  const lastOpenedModeRef = useRef<"origin" | "dest" | null>(null);
+
   useEffect(() => {
-    if (!isOpen) return;
-    setGpsError("");
-    if (mode === "origin") {
-      setOriginCoords(originPoint ? { lat: originPoint.lat, lng: originPoint.lng } : null);
-      setOriginAddress(originPoint?.address ?? "");
-    } else {
-      setDestPin(destPoint ? { lat: destPoint.lat, lng: destPoint.lng } : null);
-      setDestText(destPoint?.address ?? "");
+    if (isOpen && lastOpenedModeRef.current !== mode) {
+      lastOpenedModeRef.current = mode;
+      setGpsError("");
+      if (mode === "origin") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setOriginCoords(originPoint ? { lat: originPoint.lat, lng: originPoint.lng } : null);
+        setOriginAddress(originPoint?.address ?? "");
+      } else {
+        setDestPin(destPoint ? { lat: destPoint.lat, lng: destPoint.lng } : null);
+        setDestText(destPoint?.address ?? "");
+      }
+    } else if (!isOpen && lastOpenedModeRef.current !== null) {
+      lastOpenedModeRef.current = null;
     }
-  }, [isOpen, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, mode, originPoint, destPoint]);
 
   async function handleGps() {
     if (!navigator.geolocation) { setGpsError("Geolocalización no disponible."); return; }
@@ -198,7 +206,7 @@ export default function LocationModal({
               theme={searchBoxTheme}
               onChange={(val) => {
                 if (mode === "origin") { setOriginAddress(val); setOriginCoords(null); }
-                else                   { setDestText(val);      setDestPin(null); }
+                else { setDestText(val); setDestPin(null); }
               }}
               onRetrieve={(result) => {
                 const feature = result?.features?.[0];
@@ -206,7 +214,7 @@ export default function LocationModal({
                 const [lng, lat] = feature.geometry.coordinates;
                 const name = feature.properties.full_address || feature.properties.place_formatted || feature.properties.name || "";
                 if (mode === "origin") { setOriginAddress(name); setOriginCoords({ lat, lng }); }
-                else                   { setDestText(name);      setDestPin({ lat, lng }); }
+                else { setDestText(name); setDestPin({ lat, lng }); }
               }}
             />
           </div>

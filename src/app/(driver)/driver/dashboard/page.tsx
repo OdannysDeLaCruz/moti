@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
@@ -12,6 +12,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Toast } from "@/components/ui/Toast";
 import { useDriverFeed, NewRideEvent } from "@/hooks/useDriverFeed";
 import { playNewRequest, playStatusNegative } from "@/lib/sounds";
+import { Bike, ArrowRight } from "lucide-react";
 
 interface Ride {
   id: string;
@@ -25,8 +26,8 @@ interface Ride {
 }
 
 const DRIVER_NAV = [
-  { href: "/driver/dashboard", label: "Carreras", icon: "🏍️" },
-  { href: "/driver/profile",   label: "Perfil",   icon: "👤" },
+  { href: "/driver/dashboard", label: "Solicitudes", icon: "🏍️" },
+  { href: "/driver/profile", label: "Perfil", icon: "👤" },
 ];
 
 export default function DriverDashboardPage() {
@@ -40,15 +41,24 @@ export default function DriverDashboardPage() {
   const [modalSubmitting, setModalSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
 
-  const fetchRides = useCallback(async () => {
-    try {
-      const { data } = await api.get<Ride[]>("/api/rides");
-      setRides(Array.isArray(data) ? data : []);
-    } catch {}
-    setLoading(false);
-  }, []);
+  useEffect(() => {
+    let ignore = false;
 
-  useEffect(() => { fetchRides(); }, [fetchRides]);
+    (async () => {
+      try {
+        const { data } = await api.get<Ride[]>("/api/rides");
+        if (!ignore) setRides(Array.isArray(data) ? data : []);
+      } catch {
+        // noop
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useDriverFeed(user?.id, {
     onNewRide: (e: NewRideEvent) => {
@@ -106,8 +116,9 @@ export default function DriverDashboardPage() {
       await api.post(`/api/rides/${rideId}/accept-direct`);
       router.push(`/driver/ongoing/${rideId}`);
     } catch (err: unknown) {
-      const msg = (err as any)?.response?.data?.message ?? "Error aceptando la carrera";
-      setModalError(Array.isArray(msg) ? msg.join(", ") : msg);
+      if (err instanceof Error) {
+        setModalError(err.message);
+      }
       setModalSubmitting(false);
     }
   }
@@ -130,21 +141,22 @@ export default function DriverDashboardPage() {
       );
       closeModal();
     } catch (err: unknown) {
-      const msg = (err as any)?.response?.data?.message ?? "Error enviando oferta";
-      setModalError(Array.isArray(msg) ? msg.join(", ") : msg);
+      if (err instanceof Error) {
+        setModalError(err.message);
+      }
     } finally {
       setModalSubmitting(false);
     }
   }
 
-  const profile    = user?.driverProfile;
-  const isPending  = profile?.status === "PENDING" || !profile;
+  const profile = user?.driverProfile;
+  const isPending = profile?.status === "PENDING" || !profile;
   const isRejected = profile?.status === "REJECTED";
   const isApproved = profile?.status === "APPROVED";
   const passActive = profile?.passExpiresAt && new Date(profile.passExpiresAt) > new Date();
-  const hasAccess  = isApproved && (passActive || (profile && profile.freeRidesUsed < 5));
+  const hasAccess = isApproved && (passActive || (profile && profile.freeRidesUsed < 5));
 
-  const activeRide   = rides.find((r) => ["ACCEPTED", "IN_PROGRESS"].includes(r.status));
+  const activeRide = rides.find((r) => ["ACCEPTED", "IN_PROGRESS"].includes(r.status));
   const pendingRides = rides.filter((r) => r.status === "PENDING" || r.status === "NEGOTIATING");
   const selectedRide = rides.find((r) => r.id === selectedRideId) ?? null;
 
@@ -163,7 +175,7 @@ export default function DriverDashboardPage() {
       {cancelToast && (
         <Toast
           type="error"
-          icon="❌"
+          icon="x"
           message="Carrera cancelada"
           subMessage="El cliente canceló la solicitud"
           onDismiss={() => setCancelToast(false)}
@@ -217,7 +229,7 @@ export default function DriverDashboardPage() {
           <div className="card animate-fade-in" style={{ borderColor: "var(--primary)", borderWidth: "2px", padding: "16px", marginBottom: "16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem" }}>🏍️</span>
+                <Bike size={18} style={{ color: "var(--primary)" }} />
                 <span style={{ fontWeight: 700, fontSize: "15px" }}>Carrera en curso</span>
               </div>
               <StatusBadge status={activeRide.status as never} />
@@ -275,7 +287,9 @@ export default function DriverDashboardPage() {
                             {ride.rideType === "DELIVERY" ? "Domicilio" : "Carrera"}
                           </div>
                           <div style={{ fontSize: "14px", fontWeight: 600 }}>{ride.originAddress}</div>
-                          <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>→ {ride.destAddress}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: "var(--text-muted)" }}>
+                            <ArrowRight size={12} />{ride.destAddress}
+                          </div>
                         </div>
                         <div style={{ textAlign: "right", flexShrink: 0 }}>
                           <div style={{ fontSize: "18px", fontWeight: 800, color: "var(--accent-dark)" }}>

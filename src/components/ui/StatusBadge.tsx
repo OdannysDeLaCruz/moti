@@ -4,19 +4,19 @@ type RideStatus = "PENDING" | "NEGOTIATING" | "ACCEPTED" | "HEADING_TO_PICKUP" |
 type VerificationStatus = "PENDING" | "APPROVED" | "REJECTED";
 type StatusType = RideStatus | VerificationStatus | "ONLINE" | "OFFLINE";
 
-const STATUS_CONFIG: Record<string, { label: string; className: string; dot: string }> = {
-  PENDING:            { label: "Pendiente",    className: "badge-pending", dot: "🟡" },
-  NEGOTIATING:        { label: "Negociando",   className: "badge-active",  dot: "🔵" },
-  ACCEPTED:           { label: "Aceptada",     className: "badge-active",  dot: "🔵" },
-  HEADING_TO_PICKUP:  { label: "En camino",    className: "badge-active",  dot: "🏍️" },
-  AT_PICKUP:          { label: "En el lugar",  className: "badge-active",  dot: "📍" },
-  IN_PROGRESS:        { label: "En curso",     className: "badge-active",  dot: "🟣" },
-  COMPLETED:          { label: "Completada",   className: "badge-success", dot: "🟢" },
-  CANCELLED:          { label: "Cancelada",    className: "badge-danger",  dot: "🔴" },
-  APPROVED:           { label: "Aprobado",     className: "badge-success", dot: "🟢" },
-  REJECTED:           { label: "Rechazado",    className: "badge-danger",  dot: "🔴" },
-  ONLINE:             { label: "En línea",     className: "badge-success", dot: "🟢" },
-  OFFLINE:            { label: "Desconectado", className: "badge-neutral", dot: "⚫" },
+const STATUS_CONFIG: Record<string, { label: string; className: string; color: string }> = {
+  PENDING:            { label: "Pendiente",    className: "badge-pending", color: "#eab308" },
+  NEGOTIATING:        { label: "Negociando",   className: "badge-active",  color: "#3b82f6" },
+  ACCEPTED:           { label: "Aceptada",     className: "badge-active",  color: "#3b82f6" },
+  HEADING_TO_PICKUP:  { label: "En camino",    className: "badge-active",  color: "#3b82f6" },
+  AT_PICKUP:          { label: "En el lugar",  className: "badge-active",  color: "#3b82f6" },
+  IN_PROGRESS:        { label: "En curso",     className: "badge-active",  color: "#8b5cf6" },
+  COMPLETED:          { label: "Completada",   className: "badge-success", color: "#16a34a" },
+  CANCELLED:          { label: "Cancelada",    className: "badge-danger",  color: "#dc2626" },
+  APPROVED:           { label: "Aprobado",     className: "badge-success", color: "#16a34a" },
+  REJECTED:           { label: "Rechazado",    className: "badge-danger",  color: "#dc2626" },
+  ONLINE:             { label: "En línea",     className: "badge-success", color: "#16a34a" },
+  OFFLINE:            { label: "Desconectado", className: "badge-neutral", color: "#94a3b8" },
 };
 
 interface StatusBadgeProps {
@@ -25,11 +25,16 @@ interface StatusBadgeProps {
 }
 
 export default function StatusBadge({ status, showDot = true }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status] ?? { label: status, className: "badge-neutral", dot: "⚪" };
+  const config = STATUS_CONFIG[status] ?? { label: status, className: "badge-neutral", color: "#94a3b8" };
 
   return (
     <span className={`badge ${config.className}`}>
-      {showDot && <span style={{ fontSize: "0.6rem" }}>{config.dot}</span>}
+      {showDot && (
+        <span style={{
+          display: "inline-block", width: 6, height: 6, borderRadius: "50%",
+          background: config.color, flexShrink: 0,
+        }} />
+      )}
       {config.label}
     </span>
   );

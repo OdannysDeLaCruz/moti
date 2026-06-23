@@ -6,6 +6,7 @@ import BottomNav from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
+import { User } from "lucide-react";
 
 interface UserData {
   fullName: string;
@@ -23,7 +24,7 @@ const CLIENT_NAV = [
 
 export default function ClientProfilePage() {
   const router = useRouter();
-  const { user, loading } = useAuthGuard('CLIENT');
+  const { user, loading } = useAuthGuard('CLIENT') as { user: UserData, loading: boolean };
   const { logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -49,19 +50,15 @@ export default function ClientProfilePage() {
             <div style={{ textAlign: "center", marginBottom: "24px" }}>
               <div
                 style={{
-                  width: 80,
-                  height: 80,
+                  width: 80, height: 80,
                   background: "var(--primary)",
                   borderRadius: "var(--r-full)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "2rem",
+                  display: "flex", alignItems: "center", justifyContent: "center",
                   margin: "0 auto 12px",
                   boxShadow: "var(--shadow-primary)",
                 }}
               >
-                👤
+                <User size={36} color="#fff" />
               </div>
               <h2 style={{ fontSize: "20px", fontWeight: 800 }}>{user.fullName}</h2>
               <span className="badge badge-active mt-2">Cliente</span>
@@ -99,7 +96,7 @@ export default function ClientProfilePage() {
           </div>
         ) : (
           <div className="empty-state">
-            <div className="empty-state-icon">👤</div>
+            <div className="empty-state-icon"><User size={32} /></div>
             <p>No se pudo cargar el perfil.</p>
           </div>
         )}

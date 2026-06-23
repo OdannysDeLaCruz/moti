@@ -69,7 +69,7 @@ export default function LoginPage() {
           >
             🛵
           </div>
-          <h1 style={{ fontSize: "28px", fontWeight: 800, color: "var(--text)" }}>Moti</h1>
+          <h1 style={{ fontSize: "28px", fontWeight: 800, color: "var(--text)" }}>Motu</h1>
           <p className="mt-2 text-muted text-sm">Ingresa a tu cuenta</p>
         </div>
 

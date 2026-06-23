@@ -4,14 +4,14 @@ import { AuthProvider } from "@/lib/auth-context";
 import MapboxAbortSuppressor from "@/components/MapboxAbortSuppressor";
 
 export const metadata: Metadata = {
-  title: "Moti – Carreras y Domicilios en Tiempo Real",
+  title: "Motu – Carreras y domicilios en tiempo real",
   description:
     "Conecta con conductores verificados en moto o bici. Rápido, seguro y económico.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Moti",
+    title: "Motu",
   },
 };
 

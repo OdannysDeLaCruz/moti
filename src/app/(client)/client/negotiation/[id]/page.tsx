@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -12,6 +13,8 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useRideSocket, DriverLocationEvent } from "@/hooks/useRideSocket";
 import { playNewOffer, playStatusPositive, playStatusNegative } from "@/lib/sounds";
 import RideProgressAnimation from "@/components/RideProgressAnimation";
+import { MapPin, Navigation, CheckCircle, Bike, Flag, FileText } from "lucide-react";
+import Image from "next/image";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -46,11 +49,11 @@ interface Ride {
   offers: Offer[];
 }
 
-const DRIVER_STATUS_INFO: Record<string, { icon: string; title: string; subtitle: string }> = {
-  ACCEPTED: { icon: "✅", title: "Conductor confirmado", subtitle: "El conductor está preparando el viaje" },
-  HEADING_TO_PICKUP: { icon: "🏍️", title: "Conductor en camino", subtitle: "Tu conductor va hacia el punto de recogida" },
-  AT_PICKUP: { icon: "📍", title: "¡Tu conductor llegó!", subtitle: "El conductor está esperándote en el origen" },
-  IN_PROGRESS: { icon: "🚀", title: "Viaje en curso", subtitle: "Estás en camino a tu destino" },
+const DRIVER_STATUS_INFO: Record<string, { icon: React.ReactNode; title: string; subtitle: string }> = {
+  ACCEPTED: { icon: <CheckCircle size={28} color="var(--success)" />, title: "Conductor confirmado", subtitle: "El conductor está preparando el viaje" },
+  HEADING_TO_PICKUP: { icon: <Navigation size={28} color="var(--primary)" />, title: "Conductor en camino", subtitle: "Tu conductor va hacia el punto de recogida" },
+  AT_PICKUP: { icon: <MapPin size={28} color="var(--primary)" />, title: "¡Tu conductor llegó!", subtitle: "El conductor está esperándote en el origen" },
+  IN_PROGRESS: { icon: <Bike size={28} color="var(--primary)" />, title: "Viaje en curso", subtitle: "Estás en camino a tu destino" },
 };
 
 interface ToastState {
@@ -62,11 +65,11 @@ interface ToastState {
 }
 
 const STATUS_TOAST: Record<string, ToastState> = {
-  HEADING_TO_PICKUP: { type: "info", icon: "🏍️", message: "Conductor en camino", subMessage: "Tu conductor va hacia el punto de recogida" },
-  AT_PICKUP: { type: "info", icon: "📍", message: "¡Tu conductor llegó!", subMessage: "El conductor está esperándote en el origen" },
-  IN_PROGRESS: { type: "success", icon: "🚀", message: "Viaje iniciado", subMessage: "Estás en camino a tu destino" },
-  COMPLETED: { type: "success", icon: "🏁", message: "¡Carrera completada!", subMessage: undefined },
-  CANCELLED: { type: "error", icon: "❌", message: "Carrera cancelada", subMessage: "La carrera fue cancelada" },
+  HEADING_TO_PICKUP: { type: "info", icon: "nav", message: "Conductor en camino", subMessage: "Tu conductor va hacia el punto de recogida" },
+  AT_PICKUP: { type: "info", icon: "pin", message: "¡Tu conductor llegó!", subMessage: "El conductor está esperándote en el origen" },
+  IN_PROGRESS: { type: "success", icon: "bike", message: "Viaje iniciado", subMessage: "Estás en camino a tu destino" },
+  COMPLETED: { type: "success", icon: "flag", message: "¡Carrera completada!", subMessage: undefined },
+  CANCELLED: { type: "error", icon: "x", message: "Carrera cancelada", subMessage: "La carrera fue cancelada" },
 };
 
 export default function NegotiationPage() {
@@ -96,7 +99,8 @@ export default function NegotiationPage() {
     }
   }, [id]);
 
-  useEffect(() => { fetchRide(); }, [fetchRide]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { void fetchRide(); }, [fetchRide]);
 
   useRideSocket(id, {
     onOffer: () => { playNewOffer(); fetchRide(); },
@@ -108,7 +112,7 @@ export default function NegotiationPage() {
           playStatusPositive();
           setToast({
             type: "success",
-            icon: "✅",
+            icon: "check",
             photoUrl: data.driver.driverProfile?.profilePhotoUrl ?? undefined,
             message: `${data.driver.fullName} aceptó tu carrera`,
             subMessage: data.finalPrice ? `Por ${formatCOP(Number(data.finalPrice))}` : undefined,
@@ -127,7 +131,7 @@ export default function NegotiationPage() {
       const toastData = STATUS_TOAST[status];
       if (toastData) {
         setToast(toastData);
-        status === "CANCELLED" ? playStatusNegative() : playStatusPositive();
+        if (status === "CANCELLED") playStatusNegative(); else playStatusPositive();
       }
     },
     onDriverLocation: (e: DriverLocationEvent) => {
@@ -142,7 +146,7 @@ export default function NegotiationPage() {
       await api.post(`/api/rides/${id}/accept`, { offerId });
       await fetchRide();
     } catch (err: unknown) {
-      const msg = (err as any)?.response?.data?.message ?? "Error aceptando la oferta.";
+      const msg = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message ?? "Error aceptando la oferta.";
       setError(Array.isArray(msg) ? msg.join(", ") : msg);
     } finally {
       setAccepting(null);
@@ -338,9 +342,11 @@ export default function NegotiationPage() {
                         <div key={offer.id} className="card" style={{ padding: "16px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
                             {photo ? (
-                              <img
+                              <Image
                                 src={photo}
                                 alt={name}
+                                width={44}
+                                height={44}
                                 style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid var(--border)" }}
                               />
                             ) : (
@@ -392,7 +398,7 @@ export default function NegotiationPage() {
               <div style={{ padding: "12px 16px 0" }} className="animate-slide-up">
                 <div className="card card-success">
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "14px" }}>
-                    <span style={{ fontSize: "1.8rem" }}>{driverInfo.icon}</span>
+                    <span style={{ display: "flex", flexShrink: 0 }}>{driverInfo.icon}</span>
                     <div>
                       <p style={{ fontWeight: 700, fontSize: "15px", color: "var(--success)" }}>
                         {driverInfo.title}
@@ -404,9 +410,11 @@ export default function NegotiationPage() {
                   </div>
                   <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", display: "flex", alignItems: "center", gap: "12px" }}>
                     {ride.driver.driverProfile?.profilePhotoUrl ? (
-                      <img
+                      <Image
                         src={ride.driver.driverProfile.profilePhotoUrl}
                         alt={ride.driver.fullName}
+                        width={48}
+                        height={48}
                         style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid var(--success)" }}
                       />
                     ) : (
@@ -433,14 +441,14 @@ export default function NegotiationPage() {
               <div className="card mb-4 mt-3 animate-fade-in">
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                    <span style={{ fontSize: "1rem", marginTop: "2px" }}>📍</span>
+                    <MapPin size={16} style={{ color: "var(--success)", marginTop: "2px", flexShrink: 0 }} />
                     <div>
                       <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>Origen</div>
                       <div style={{ fontSize: "14px", fontWeight: 500 }}>{ride.originAddress}</div>
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                    <span style={{ fontSize: "1rem", marginTop: "2px" }}>🎯</span>
+                    <Navigation size={16} style={{ color: "var(--danger)", marginTop: "2px", flexShrink: 0 }} />
                     <div>
                       <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>Destino</div>
                       <div style={{ fontSize: "14px", fontWeight: 500 }}>{ride.destAddress}</div>
@@ -463,7 +471,7 @@ export default function NegotiationPage() {
                 {ride.notes && (
                   <div style={{ borderTop: "1px solid var(--border)", marginTop: "14px", paddingTop: "14px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                      <span style={{ fontSize: "0.95rem" }}>📝</span>
+                      <FileText size={13} style={{ color: "var(--text-muted)" }} />
                       <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                         Tu nota
                       </span>
@@ -478,7 +486,9 @@ export default function NegotiationPage() {
               {isCompleted && (
                 <div className="card card-success mb-4">
                   <div style={{ textAlign: "center", padding: "8px 0" }}>
-                    <div style={{ fontSize: "2rem", marginBottom: "6px" }}>🏁</div>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
+                      <Flag size={28} color="var(--success)" />
+                    </div>
                     <p style={{ fontWeight: 700, fontSize: "16px", color: "var(--success)" }}>¡Carrera completada!</p>
                   </div>
                 </div>

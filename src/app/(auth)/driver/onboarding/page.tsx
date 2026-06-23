@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import api from "@/lib/api-client";
 
-type VehicleType = "MOTO" | "BICI";
+type VehicleType = "MOTO";
 
 interface FileField {
   file: File | null;
@@ -32,8 +32,8 @@ function FileUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="form-group" style={{ marginBottom: "12px" }}>
-      <label>{label}</label>
+    <div className="form-group">
+      {/* <label>{label}</label> */}
       <div
         onClick={() => inputRef.current?.click()}
         style={{
@@ -79,11 +79,11 @@ function FileUploadField({
           <>
             <div style={{ fontSize: "1.4rem" }}>📷</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>
-                Toca para seleccionar foto
-              </div>
+              {/* <div style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 500 }}>
+                Subir foto
+              </div> */}
               {hint && (
-                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+                <div style={{ fontSize: "14px", color: "var(--text-muted)", marginTop: "2px" }}>
                   {hint}
                 </div>
               )}
@@ -113,7 +113,7 @@ type ProfileStatus = "PENDING" | "APPROVED" | "REJECTED";
 export default function DriverOnboardingPage() {
   const router = useRouter();
 
-  const [vehicleType, setVehicleType] = useState<VehicleType>("MOTO");
+  const [vehicleType] = useState<VehicleType>("MOTO");
   const [form, setForm] = useState({ vehiclePlate: "", vehicleModel: "" });
   const [photos, setPhotos] = useState({
     profilePhoto: emptyFile(),
@@ -168,8 +168,7 @@ export default function DriverOnboardingPage() {
     if (!photos.profilePhoto.file) missing.push("Foto de perfil");
     if (!photos.docFront.file) missing.push("Cédula de frente");
     if (!photos.docBack.file) missing.push("Cédula de reverso");
-    if (!photos.soatOrBike.file)
-      missing.push(vehicleType === "MOTO" ? "SOAT" : "Foto de la bicicleta");
+    if (!photos.soatOrBike.file) missing.push( "Foto placa moto");
 
     if (missing.length > 0) {
       setError(`Faltan: ${missing.join(", ")}`);
@@ -196,8 +195,10 @@ export default function DriverOnboardingPage() {
       await api.post("/api/driver/onboarding", fd);
       setDone(true);
     } catch (err: unknown) {
-      const msg = (err as any)?.response?.data?.message ?? "Error al guardar tus datos.";
-      setError(Array.isArray(msg) ? msg.join(", ") : msg);
+      if (err instanceof Error && 'response' in err) {
+        const response = (err as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Error al guardar tus datos.";
+        setError(Array.isArray(response) ? response.join(", ") : response);
+      }
       setLoading(false);
     }
   }
@@ -230,7 +231,7 @@ export default function DriverOnboardingPage() {
                 Verificación en proceso
               </h2>
               <p className="text-muted mb-6" style={{ fontSize: "15px" }}>
-                Tus documentos ya fueron enviados y están siendo revisados por el equipo Moti.
+                Tus documentos ya fueron enviados y están siendo revisados por el equipo Motu.
                 Te notificaremos cuando seas aprobado.
               </p>
               <div className="card" style={{ textAlign: "left", marginBottom: "24px" }}>
@@ -321,7 +322,7 @@ export default function DriverOnboardingPage() {
           style={{
             width: 36,
             height: 36,
-            background: "var(--primary)",
+            border: "1px solid var(--border)",
             borderRadius: "var(--r-sm)",
             display: "flex",
             alignItems: "center",
@@ -329,7 +330,7 @@ export default function DriverOnboardingPage() {
             fontSize: "1.1rem",
           }}
         >
-          {vehicleType === "BICI" ? "🚲" : "🏍️"}
+          🏍️
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>
@@ -350,7 +351,7 @@ export default function DriverOnboardingPage() {
                 flex: 1,
                 height: 5,
                 borderRadius: 4,
-                background: i === 0 ? "var(--success)" : "var(--primary)",
+                background: i === 0 ? "var(--success)" : "var(--text-dim)",
               }}
             />
           ))}
@@ -360,14 +361,14 @@ export default function DriverOnboardingPage() {
           Datos de tu vehículo
         </h2>
         <p className="text-muted text-sm mb-6">
-          Esta información será verificada por el equipo Moti.
+          Esta información será verificada por el equipo Motu.
         </p>
 
         <form onSubmit={handleSubmit}>
           {/* Vehicle type selector */}
           <div className="form-group">
-            <label>Tipo de vehículo</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            {/* <label>Tipo de vehículo</label> */}
+            {/* <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
               {(["MOTO", "BICI"] as VehicleType[]).map((type) => (
                 <button
                   key={type}
@@ -393,7 +394,7 @@ export default function DriverOnboardingPage() {
                   {type === "MOTO" ? "Motocicleta" : "Bicicleta"}
                 </button>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {vehicleType === "MOTO" && (
@@ -436,44 +437,46 @@ export default function DriverOnboardingPage() {
               marginBottom: "16px",
             }}
           >
-            <p className="text-sm font-semibold mb-4" style={{ color: "var(--primary-dark)" }}>
+            <p className="text-md font-semibold mb-4" style={{ color: "var(--primary-dark)" }}>
               📎 Documentos y fotos
             </p>
 
             <FileUploadField
               id="profilePhoto"
-              label="Foto de perfil"
-              hint="Foto clara de tu rostro"
+              label="Tu foto de perfil"
+              hint="Toca para subir foto de tu rostro"
               fieldState={photos.profilePhoto}
               onChange={handleFileSelect("profilePhoto")}
             />
+            
             <FileUploadField
               id="docFront"
-              label="Cédula — frente"
-              hint="Foto legible del frente de tu cédula"
+              label="Cédula - frente"
+              hint="Toca para subir foto del frente de tu cédula"
               fieldState={photos.docFront}
               onChange={handleFileSelect("docFront")}
             />
             <FileUploadField
               id="docBack"
-              label="Cédula — reverso"
-              hint="Foto legible del reverso de tu cédula"
+              label="Cédula - reverso"
+              hint="Toca para subir foto del reverso de tu cédula"
               fieldState={photos.docBack}
               onChange={handleFileSelect("docBack")}
             />
+
             {vehicleType === "MOTO" ? (
               <FileUploadField
-                id="soat"
-                label="SOAT"
-                hint="Foto o scan del SOAT vigente"
+                id="placa"
+                label="Foto placa moto"
+                hint="Toca para subir foto de placa de la moto"
                 fieldState={photos.soatOrBike}
                 onChange={handleFileSelect("soatOrBike")}
               />
             ) : (
               <FileUploadField
                 id="bikePhoto"
-                label="Foto de la bicicleta"
-                hint="Foto completa de tu bicicleta"
+                label="Foto bicicleta"
+                hint="Toca para subir foto de tu bicicleta"
                 fieldState={photos.soatOrBike}
                 onChange={handleFileSelect("soatOrBike")}
               />

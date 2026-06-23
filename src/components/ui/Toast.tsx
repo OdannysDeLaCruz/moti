@@ -1,11 +1,23 @@
 'use client';
 
 import { useEffect } from 'react';
+import { X, Navigation, MapPin, Bike, Flag, AlertCircle, CheckCircle, Bell } from 'lucide-react';
+import Image from 'next/image';
 
 const TYPE_BG: Record<string, string> = {
   success: 'var(--success)',
   info:    'var(--primary)',
   error:   '#ef4444',
+};
+
+const LUCIDE_ICONS: Record<string, React.ReactNode> = {
+  nav:   <Navigation size={22} color="#fff" />,
+  pin:   <MapPin size={22} color="#fff" />,
+  bike:  <Bike size={22} color="#fff" />,
+  flag:  <Flag size={22} color="#fff" />,
+  x:     <AlertCircle size={22} color="#fff" />,
+  check: <CheckCircle size={22} color="#fff" />,
+  bell:  <Bell size={22} color="#fff" />,
 };
 
 interface ToastProps {
@@ -23,7 +35,7 @@ interface ToastProps {
 export function Toast({
   message,
   subMessage,
-  icon = '🎉',
+  icon = 'bell',
   photoUrl,
   type = 'success',
   actionLabel,
@@ -35,6 +47,8 @@ export function Toast({
     const t = setTimeout(onDismiss, duration);
     return () => clearTimeout(t);
   }, [onDismiss, duration]);
+
+  const iconNode = photoUrl ? null : (LUCIDE_ICONS[icon] ?? <Bell size={22} color="#fff" />);
 
   return (
     <div
@@ -57,13 +71,15 @@ export function Toast({
       }}
     >
       {photoUrl ? (
-        <img
+        <Image
           src={photoUrl}
           alt=""
+          width={40}
+          height={40}
           style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid rgba(255,255,255,0.4)' }}
         />
       ) : (
-        <span style={{ fontSize: '1.4rem', flexShrink: 0 }}>{icon}</span>
+        <span style={{ flexShrink: 0, display: 'flex' }}>{iconNode}</span>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, fontSize: '14px', color: '#fff', lineHeight: 1.3 }}>
@@ -102,13 +118,13 @@ export function Toast({
           border: 'none',
           color: 'rgba(255,255,255,0.75)',
           cursor: 'pointer',
-          fontSize: '20px',
           padding: '0',
           lineHeight: 1,
           flexShrink: 0,
+          display: 'flex',
         }}
       >
-        ×
+        <X size={18} />
       </button>
     </div>
   );

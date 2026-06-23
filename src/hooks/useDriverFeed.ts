@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { getSupabaseClient } from '../lib/supabase/client';
 
 export interface NewRideEvent {
@@ -19,7 +19,7 @@ interface DriverFeedHandlers {
 
 export function useDriverFeed(driverId: string | undefined, handlers: DriverFeedHandlers) {
   const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+  useLayoutEffect(() => { handlersRef.current = handlers; });
 
   // New ride requests — all drivers see new PENDING rides
   useEffect(() => {

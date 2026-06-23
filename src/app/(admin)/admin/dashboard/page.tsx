@@ -78,6 +78,30 @@ export default function AdminDashboardPage() {
           <button
             className="card pointer"
             style={{ textAlign: "left", width: "100%", background: "none", border: "1px solid var(--border)", cursor: "pointer" }}
+            onClick={() => router.push("/admin/rides")}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <div style={{ width: 44, height: 44, background: "var(--primary-xpale)", borderRadius: "var(--r-sm)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", flexShrink: 0 }}>
+                🏍️
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "15px" }}>Carreras</div>
+                <div className="text-muted text-sm">
+                  Ver y filtrar todas las carreras
+                  {stats && stats.activeRides > 0 && (
+                    <span style={{ marginLeft: "6px", background: "var(--success)", color: "#fff", borderRadius: "var(--r-full)", padding: "1px 7px", fontSize: "11px", fontWeight: 700 }}>
+                      {stats.activeRides} activas
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span style={{ marginLeft: "auto", color: "var(--text-dim)", fontSize: "18px" }}>›</span>
+            </div>
+          </button>
+
+          <button
+            className="card pointer"
+            style={{ textAlign: "left", width: "100%", background: "none", border: "1px solid var(--border)", cursor: "pointer" }}
             onClick={() => router.push("/admin/verify")}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>

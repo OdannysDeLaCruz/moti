@@ -51,8 +51,8 @@ export default function SignupPage() {
       if (form.role === "DRIVER") router.push("/driver/onboarding");
       else router.push("/client/dashboard");
     } catch (err: unknown) {
-      const msg = (err as any)?.response?.data?.message ?? "Ocurrió un error inesperado.";
-      setError(Array.isArray(msg) ? msg.join(", ") : msg);
+      const response = (err as { response?: { data?: { message?: string } } }).response?.data?.message ?? "Ocurrió un error inesperado.";
+      setError(Array.isArray(response) ? response.join(", ") : response);
     } finally {
       setLoading(false);
     }
@@ -88,13 +88,13 @@ export default function SignupPage() {
             🛵
           </div>
           <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Crea tu cuenta</h1>
-          <p className="mt-1 text-muted text-sm">Únete a Moti hoy</p>
+          <p className="mt-1 text-muted text-sm">Únete a Motu hoy</p>
         </div>
 
         <div className="card" style={{ padding: "24px" }}>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>¿Cómo usarás Moti?</label>
+              <label>¿Cómo usarás Motu?</label>
               <div className="grid-2">
                 {ROLES.map((r) => (
                   <button
@@ -162,6 +162,7 @@ export default function SignupPage() {
                 id="phone"
                 name="phone"
                 type="tel"
+                maxLength={10}
                 placeholder="300 000 0000"
                 value={form.phone}
                 onChange={handleChange}
@@ -175,11 +176,12 @@ export default function SignupPage() {
                 id="password-signup"
                 name="password"
                 type="password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 4 caracteres"
                 value={form.password}
                 onChange={handleChange}
                 required
-                minLength={6}
+                minLength={4}
+                maxLength={16}
                 autoComplete="new-password"
               />
             </div>
@@ -197,7 +199,7 @@ export default function SignupPage() {
 
           <div className="divider">o</div>
 
-          <p className="text-center text-sm text-muted">
+          <p className="text-center text-md text-muted">
             ¿Ya tienes cuenta?{" "}
             <Link href="/login" className="text-primary font-semibold">
               Inicia sesión

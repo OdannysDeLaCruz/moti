@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Button from "@/components/ui/Button";
@@ -10,6 +10,7 @@ import api from "@/lib/api-client";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 import type { LocationPoint } from "@/components/LocationModal";
+import { User, Home, ClipboardList, Bike, Menu, FileText, LogOut } from "lucide-react";
 
 const LocationModal = dynamic(() => import("@/components/LocationModal"), { ssr: false });
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
@@ -64,14 +65,24 @@ export default function ClientDashboardPage() {
     if (delta < -40) setSheetExpanded(true);
   }
 
-  const fetchActiveRide = useCallback(async () => {
+  useEffect(() => {
+  let ignore = false;
+
+  (async () => {
     try {
       const { data } = await api.get<ActiveRide[]>("/api/rides");
-      setActiveRide(data.find((r) => ACTIVE_STATUSES.includes(r.status)) ?? null);
-    } catch { }
-  }, []);
+      if (!ignore) {
+        setActiveRide(data.find((r) => ACTIVE_STATUSES.includes(r.status)) ?? null);
+      }
+    } catch {
+      // noop
+    }
+  })();
 
-  useEffect(() => { fetchActiveRide(); }, [fetchActiveRide]);
+  return () => {
+    ignore = true;
+  };
+}, []);
 
   function adjustPrice(delta: number) {
     setPrice((p) => Math.max(MIN_PRICE, p + delta));
@@ -95,7 +106,7 @@ export default function ClientDashboardPage() {
       });
       router.push(`/client/negotiation/${data.id}`);
     } catch (err: unknown) {
-      const msg = (err as any)?.response?.data?.message ?? "Error creando la solicitud.";
+      const msg = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message ?? "Error creando la solicitud.";
       setError(Array.isArray(msg) ? msg.join(", ") : msg);
       setLoading(false);
     }
@@ -142,8 +153,10 @@ export default function ClientDashboardPage() {
               <div style={{
                 width: 52, height: 52, borderRadius: "50%", background: "var(--primary)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "1.4rem", marginBottom: "10px",
-              }}>👤</div>
+                marginBottom: "10px",
+              }}>
+                <User size={26} color="#fff" />
+              </div>
               {user && (
                 <>
                   <p style={{ fontWeight: 700, fontSize: "16px", color: "var(--text)" }}>{user.fullName}</p>
@@ -154,9 +167,9 @@ export default function ClientDashboardPage() {
             <div style={{ height: 1, background: "var(--border)", margin: "0 20px" }} />
             <nav style={{ padding: "8px 0", flex: 1 }}>
               {([
-                { href: "/client/dashboard", label: "Inicio",   icon: "🏠" },
-                { href: "/client/history",   label: "Historial", icon: "📋" },
-                { href: "/client/profile",   label: "Perfil",    icon: "👤" },
+                { href: "/client/dashboard", label: "Inicio",   icon: <Home size={20} /> },
+                { href: "/client/history",   label: "Historial", icon: <ClipboardList size={20} /> },
+                { href: "/client/profile",   label: "Perfil",    icon: <User size={20} /> },
               ] as const).map((item) => (
                 <button key={item.href}
                   onClick={() => { setMenuOpen(false); router.push(item.href); }}
@@ -167,7 +180,7 @@ export default function ClientDashboardPage() {
                     fontFamily: "inherit", fontSize: "15px", fontWeight: 600,
                     color: "var(--text)", textAlign: "left",
                   }}>
-                  <span style={{ fontSize: "1.2rem" }}>{item.icon}</span>{item.label}
+                  {item.icon}{item.label}
                 </button>
               ))}
             </nav>
@@ -180,7 +193,7 @@ export default function ClientDashboardPage() {
                   background: "none", border: "none", cursor: "pointer",
                   fontFamily: "inherit", fontSize: "15px", fontWeight: 600, color: "var(--danger)",
                 }}>
-                <span style={{ fontSize: "1.2rem" }}>🚪</span>Cerrar sesión
+                <LogOut size={20} />Cerrar sesión
               </button>
             </div>
           </div>
@@ -270,13 +283,10 @@ export default function ClientDashboardPage() {
             pointerEvents: "auto",
             width: 40, height: 40, borderRadius: "50%",
             background: "var(--surface)", border: "none", cursor: "pointer",
-            display: "flex", flexDirection: "column", gap: "5px",
-            alignItems: "center", justifyContent: "center",
+            display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
           }}>
-          {[0,1,2].map((i) => (
-            <span key={i} style={{ display: "block", width: "18px", height: "2px", background: "var(--text)", borderRadius: "2px" }} />
-          ))}
+          <Menu size={20} color="var(--text)" />
         </button>
         <div style={{
           pointerEvents: "none",
@@ -287,9 +297,11 @@ export default function ClientDashboardPage() {
           <div style={{
             width: 26, height: 26, background: "var(--primary)",
             borderRadius: "var(--r-sm)", display: "flex",
-            alignItems: "center", justifyContent: "center", fontSize: "0.9rem",
-          }}>🛵</div>
-          <span style={{ fontWeight: 700, fontSize: "16px" }}>Moti</span>
+            alignItems: "center", justifyContent: "center",
+          }}>
+            <Bike size={15} color="#fff" />
+          </div>
+          <span style={{ fontWeight: 700, fontSize: "16px" }}>Motu</span>
         </div>
         <div style={{ width: 40 }} />
       </div>
@@ -308,7 +320,7 @@ export default function ClientDashboardPage() {
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "1.2rem" }}>🛵</span>
+                <Bike size={18} style={{ color: "var(--primary)" }} />
                 <span style={{ fontWeight: 700, fontSize: "15px" }}>
                   {activeRide.rideType === "DELIVERY" ? "Domicilio en curso" : "Carrera en curso"}
                 </span>
@@ -487,7 +499,7 @@ export default function ClientDashboardPage() {
                       cursor: "pointer", display: "flex", alignItems: "center",
                       gap: "10px", fontFamily: "inherit", textAlign: "left",
                     }}>
-                    <span style={{ fontSize: "1rem", flexShrink: 0 }}>📝</span>
+                    <FileText size={16} style={{ color: note ? "var(--primary)" : "var(--text-muted)", flexShrink: 0 }} />
                     <span style={{
                       flex: 1, fontSize: "13px", fontWeight: note ? 500 : 400,
                       color: note ? "var(--primary)" : "var(--text-muted)",
