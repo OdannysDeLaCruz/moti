@@ -211,8 +211,9 @@ export default function LocationModal({
               onRetrieve={(result) => {
                 const feature = result?.features?.[0];
                 if (!feature) return;
+                console.log(feature)
                 const [lng, lat] = feature.geometry.coordinates;
-                const name = feature.properties.full_address || feature.properties.place_formatted || feature.properties.name || "";
+                const name = `${feature.properties.name} ${feature.properties.full_address}` || feature.properties.place_formatted;
                 if (mode === "origin") { setOriginAddress(name); setOriginCoords({ lat, lng }); }
                 else { setDestText(name); setDestPin({ lat, lng }); }
               }}

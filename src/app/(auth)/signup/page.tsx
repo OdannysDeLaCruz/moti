@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import Button from "@/components/ui/Button";
+import Image from "next/image";
 
 const ROLE_HOME: Record<string, string> = {
   CLIENT: '/client/dashboard',
@@ -62,7 +63,7 @@ export default function SignupPage() {
     <div
       style={{
         minHeight: "100dvh",
-        background: "linear-gradient(160deg, var(--accent-pale) 0%, var(--bg) 50%)",
+        background: "linear-gradient(160deg, var(--primary-pale) 0%, var(--bg) 50%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -71,24 +72,15 @@ export default function SignupPage() {
     >
       <div style={{ width: "100%", maxWidth: 400 }} className="animate-fade-in">
         <div className="text-center mb-6">
-          <div
-            style={{
-              width: 60,
-              height: 60,
-              background: "var(--primary)",
-              borderRadius: "var(--r-lg)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.75rem",
-              margin: "0 auto 14px",
-              boxShadow: "var(--shadow-primary)",
-            }}
-          >
-            🛵
-          </div>
+          <Image
+            src="/logo-motu.webp"
+            alt="Logo Motu"
+            width={100}
+            height={50}
+            className="mx-auto"
+          />
           <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Crea tu cuenta</h1>
-          <p className="mt-1 text-muted text-sm">Únete a Motu hoy</p>
+          <p className="mt-1 text-muted text-sm">Únete a Motu y empieza a ganar dinero por tus servicios.</p>
         </div>
 
         <div className="card" style={{ padding: "24px" }}>

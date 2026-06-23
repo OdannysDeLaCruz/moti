@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import api from "@/lib/api-client";
+import Image from "next/image";
 
 type VehicleType = "MOTO";
 
@@ -168,7 +169,7 @@ export default function DriverOnboardingPage() {
     if (!photos.profilePhoto.file) missing.push("Foto de perfil");
     if (!photos.docFront.file) missing.push("Cédula de frente");
     if (!photos.docBack.file) missing.push("Cédula de reverso");
-    if (!photos.soatOrBike.file) missing.push( "Foto placa moto");
+    if (!photos.soatOrBike.file) missing.push("Foto placa moto");
 
     if (missing.length > 0) {
       setError(`Faltan: ${missing.join(", ")}`);
@@ -318,20 +319,13 @@ export default function DriverOnboardingPage() {
   return (
     <div className="page">
       <div className="screen-header">
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            border: "1px solid var(--border)",
-            borderRadius: "var(--r-sm)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "1.1rem",
-          }}
-        >
-          🏍️
-        </div>
+        <Image
+          src="/moto-motu.webp"
+          alt="Logo Motu"
+          width={50}
+          height={50}
+          className="mx-auto"
+        />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>
             Registro de Conductor
@@ -448,7 +442,7 @@ export default function DriverOnboardingPage() {
               fieldState={photos.profilePhoto}
               onChange={handleFileSelect("profilePhoto")}
             />
-            
+
             <FileUploadField
               id="docFront"
               label="Cédula - frente"

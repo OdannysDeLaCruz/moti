@@ -15,6 +15,7 @@ interface DriverFeedHandlers {
   onNewRide: (e: NewRideEvent) => void;
   onRideAccepted?: (rideId: string) => void;
   onRideCancelled?: (rideId: string) => void;
+  onOfferRejected?: (offerId: string) => void;
 }
 
 export function useDriverFeed(driverId: string | undefined, handlers: DriverFeedHandlers) {
@@ -88,4 +89,30 @@ export function useDriverFeed(driverId: string | undefined, handlers: DriverFeed
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // Offer rejected — fires when one of this driver's offers is rejected
+  useEffect(() => {
+    if (!driverId) return;
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel(`driver-offer-rejected-${driverId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'ride_offers',
+          filter: `driver_id=eq.${driverId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          if (row.status === 'REJECTED') {
+            handlersRef.current.onOfferRejected?.(row.id as string);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [driverId]);
 }

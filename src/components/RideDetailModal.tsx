@@ -3,6 +3,12 @@
 import { Bike } from "lucide-react";
 import { formatCOP } from "@/lib/whatsapp";
 
+enum RideOfferStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+}
+
 interface Ride {
   id: string;
   originAddress: string;
@@ -10,7 +16,7 @@ interface Ride {
   initialPrice: string;
   rideType: "TRANSPORT" | "DELIVERY";
   client: { fullName: string; phone: string };
-  offers: { id: string; counterPrice: number; driverId: string }[];
+  offers: { id: string; counterPrice: number; driverId: string, status: RideOfferStatus }[];
 }
 
 interface Props {
@@ -32,7 +38,7 @@ export default function RideDetailModal({
   onAcceptDirect,
   onSubmitOffer,
 }: Props) {
-  const alreadyOffered = ride.offers.some((o) => o.driverId === currentUserId);
+  const alreadyOffered = ride.offers.some((o) => o.driverId === currentUserId && o.status === RideOfferStatus.PENDING);
   const initialPrice = Number(ride.initialPrice);
 
   const base = Math.ceil(initialPrice / 1000) * 1000;

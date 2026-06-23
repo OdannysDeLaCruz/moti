@@ -18,8 +18,15 @@ import Image from "next/image";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
+export enum RideOfferStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+}
+
 interface Offer {
   id: string;
+  status: RideOfferStatus;
   counterPrice: number;
   driverId: string;
   driverName?: string;
@@ -79,6 +86,7 @@ export default function NegotiationPage() {
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [error, setError] = useState("");
@@ -153,6 +161,18 @@ export default function NegotiationPage() {
     }
   }
 
+  async function rejectOffer(offerId: string) {
+    setRejecting(offerId);
+    try {
+      await api.post(`/api/rides/${id}/reject`, { offerId });
+      setRide((prev) => prev ? { ...prev, offers: prev.offers.filter((o) => o.id !== offerId) } : prev);
+    } catch {
+      // noop
+    } finally {
+      setRejecting(null);
+    }
+  }
+
   async function cancelRide() {
     setCancelling(true);
     try {
@@ -197,6 +217,7 @@ export default function NegotiationPage() {
   const isCancelled = ride.status === "CANCELLED";
   const isCompleted = ride.status === "COMPLETED";
   const isPending = !isActive && !isCancelled && !isCompleted;
+  const pendingOffers = ride.offers.filter((o) => o.status === RideOfferStatus.PENDING);
 
   const driverInfo = DRIVER_STATUS_INFO[ride.status];
 
@@ -235,6 +256,8 @@ export default function NegotiationPage() {
     if (delta > 40) setSheetExpanded(false);
     else if (delta < -40) setSheetExpanded(true);
   }
+
+
 
   return (
     <>
@@ -324,17 +347,17 @@ export default function NegotiationPage() {
             {isPending && (
               <div style={{ padding: "0 16px" }}>
                 <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px", marginTop: "8px" }}>
-                  {ride.offers.length > 0 && `Ofertas (${ride.offers.length})`}
+                  {pendingOffers.length > 0 && `Ofertas (${pendingOffers.length})`}
                 </h3>
 
-                {ride.offers.length === 0 ? (
+                {pendingOffers.length === 0 ? (
                   <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
                     <p className="text-muted text-sm">Buscando conductores...</p>
                     <div className="spinner mt-4" style={{ color: "var(--primary)", margin: "16px auto 0" }} />
                   </div>
                 ) : (
                   <div className="stagger" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {ride.offers.map((offer) => {
+                    {pendingOffers.map((offer) => {
                       const name = offer.driver?.fullName ?? "";
                       const photo = offer.driver?.driverProfile?.profilePhotoUrl;
                       const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
@@ -368,15 +391,26 @@ export default function NegotiationPage() {
                               </span>
                             </div>
                           </div>
-                          <Button
-                            variant="success"
-                            fullWidth
-                            size="sm"
-                            loading={accepting === offer.id}
-                            onClick={() => acceptOffer(offer.id)}
-                          >
-                            Aceptar oferta
-                          </Button>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <Button
+                              variant="ghost"
+                              fullWidth
+                              size="sm"
+                              loading={rejecting === offer.id}
+                              onClick={() => rejectOffer(offer.id)}
+                            >
+                              Rechazar
+                            </Button>
+                            <Button
+                              variant="success"
+                              fullWidth
+                              size="sm"
+                              loading={accepting === offer.id}
+                              onClick={() => acceptOffer(offer.id)}
+                            >
+                              Aceptar oferta
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}

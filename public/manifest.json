@@ -1,11 +1,17 @@
 {
   "name": "Motu – Carreras en Tiempo Real",
   "short_name": "Motu",
-  "description": "Conecta con conductores verificados en moto o bici.",
+  "description": "Conecta con conductores verificados en moto",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
   "orientation": "portrait",
-  "icons": []
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
 }

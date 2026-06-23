@@ -11,6 +11,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 import type { LocationPoint } from "@/components/LocationModal";
 import { User, Home, ClipboardList, Bike, Menu, FileText, LogOut } from "lucide-react";
+import Image from "next/image";
 
 const LocationModal = dynamic(() => import("@/components/LocationModal"), { ssr: false });
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
@@ -19,7 +20,7 @@ const PRICE_STEP = 500;
 const MIN_PRICE = 4000;
 const RIDE_TYPES = [
   { value: "TRANSPORT", label: "Carrera", desc: "Transporte de persona" },
-  { value: "DELIVERY",  label: "Entrega",  desc: "Envío de paquete" },
+  { value: "DELIVERY", label: "Entrega", desc: "Envío de paquete" },
 ] as const;
 type RideType = "TRANSPORT" | "DELIVERY";
 const ACTIVE_STATUSES = ["PENDING", "NEGOTIATING", "ACCEPTED", "IN_PROGRESS"];
@@ -37,18 +38,18 @@ export default function ClientDashboardPage() {
   const { user } = useAuthGuard("CLIENT");
   const { logout } = useAuth();
 
-  const [menuOpen,   setMenuOpen]   = useState(false);
-  const [modalMode,  setModalMode]  = useState<"origin" | "dest" | null>(null);
-  const [rideType,   setRideType]   = useState<RideType>("TRANSPORT");
-  const [origin,     setOrigin]     = useState<LocationPoint | null>(null);
-  const [dest,       setDest]       = useState<LocationPoint | null>(null);
-  const [price,      setPrice]      = useState(5000);
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"origin" | "dest" | null>(null);
+  const [rideType, setRideType] = useState<RideType>("TRANSPORT");
+  const [origin, setOrigin] = useState<LocationPoint | null>(null);
+  const [dest, setDest] = useState<LocationPoint | null>(null);
+  const [price, setPrice] = useState(5000);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [activeRide, setActiveRide] = useState<ActiveRide | null>(null);
-  const [note,       setNote]       = useState("");
-  const [noteModal,  setNoteModal]  = useState(false);
-  const [noteDraft,  setNoteDraft]  = useState("");
+  const [note, setNote] = useState("");
+  const [noteModal, setNoteModal] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
   // Bottom sheet drag-to-snap: false = collapsed (pills only), true = expanded (full form)
   const [sheetExpanded, setSheetExpanded] = useState(true);
   const dragStartY = useRef(0);
@@ -61,28 +62,28 @@ export default function ClientDashboardPage() {
   function onDragEnd(clientY: number) {
     const delta = clientY - dragStartY.current;
     // swipe down >40px → collapse; swipe up >40px → expand
-    if (delta > 40)  setSheetExpanded(false);
+    if (delta > 40) setSheetExpanded(false);
     if (delta < -40) setSheetExpanded(true);
   }
 
   useEffect(() => {
-  let ignore = false;
+    let ignore = false;
 
-  (async () => {
-    try {
-      const { data } = await api.get<ActiveRide[]>("/api/rides");
-      if (!ignore) {
-        setActiveRide(data.find((r) => ACTIVE_STATUSES.includes(r.status)) ?? null);
+    (async () => {
+      try {
+        const { data } = await api.get<ActiveRide[]>("/api/rides");
+        if (!ignore) {
+          setActiveRide(data.find((r) => ACTIVE_STATUSES.includes(r.status)) ?? null);
+        }
+      } catch {
+        // noop
       }
-    } catch {
-      // noop
-    }
-  })();
+    })();
 
-  return () => {
-    ignore = true;
-  };
-}, []);
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   function adjustPrice(delta: number) {
     setPrice((p) => Math.max(MIN_PRICE, p + delta));
@@ -91,7 +92,7 @@ export default function ClientDashboardPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!origin) { setError("Indica tu punto de origen."); return; }
-    if (!dest)   { setError("Escribe o selecciona el destino."); return; }
+    if (!dest) { setError("Escribe o selecciona el destino."); return; }
     setError("");
     setLoading(true);
     try {
@@ -99,7 +100,7 @@ export default function ClientDashboardPage() {
         originAddress: origin.address,
         originLat: origin.lat, originLng: origin.lng,
         destAddress: dest.address,
-        destLat: dest.lat,     destLng: dest.lng,
+        destLat: dest.lat, destLng: dest.lng,
         initialPrice: price,
         rideType,
         notes: note.trim() || undefined,
@@ -126,8 +127,8 @@ export default function ClientDashboardPage() {
     : [10.4631 - LAT_OFFSET, -73.2532];
 
   const mapPins = [
-    ...(origin ? [{ lat: origin.lat, lng: origin.lng, label: "Origen",  color: "green" as const }] : []),
-    ...(dest   ? [{ lat: dest.lat,   lng: dest.lng,   label: "Destino", color: "red"   as const }] : []),
+    ...(origin ? [{ lat: origin.lat, lng: origin.lng, label: "Origen", color: "green" as const }] : []),
+    ...(dest ? [{ lat: dest.lat, lng: dest.lng, label: "Destino", color: "red" as const }] : []),
   ];
 
   return (
@@ -167,9 +168,9 @@ export default function ClientDashboardPage() {
             <div style={{ height: 1, background: "var(--border)", margin: "0 20px" }} />
             <nav style={{ padding: "8px 0", flex: 1 }}>
               {([
-                { href: "/client/dashboard", label: "Inicio",   icon: <Home size={20} /> },
-                { href: "/client/history",   label: "Historial", icon: <ClipboardList size={20} /> },
-                { href: "/client/profile",   label: "Perfil",    icon: <User size={20} /> },
+                { href: "/client/dashboard", label: "Inicio", icon: <Home size={20} /> },
+                { href: "/client/history", label: "Historial", icon: <ClipboardList size={20} /> },
+                { href: "/client/profile", label: "Perfil", icon: <User size={20} /> },
               ] as const).map((item) => (
                 <button key={item.href}
                   onClick={() => { setMenuOpen(false); router.push(item.href); }}
@@ -294,14 +295,13 @@ export default function ClientDashboardPage() {
           background: "var(--surface)", borderRadius: "var(--r-lg)",
           padding: "6px 14px", boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
         }}>
-          <div style={{
-            width: 26, height: 26, background: "var(--primary)",
-            borderRadius: "var(--r-sm)", display: "flex",
-            alignItems: "center", justifyContent: "center",
-          }}>
-            <Bike size={15} color="#fff" />
-          </div>
-          <span style={{ fontWeight: 700, fontSize: "16px" }}>Motu</span>
+          <Image
+            src="/logo-motu.webp"
+            alt="Logo Motu"
+            width={40}
+            height={20}
+            className="mx-auto"
+          />
         </div>
         <div style={{ width: 40 }} />
       </div>
@@ -419,7 +419,7 @@ export default function ClientDashboardPage() {
                 {/* Divider with dots */}
                 <div style={{ display: "flex", alignItems: "center", padding: "0 14px" }}>
                   <div style={{ width: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
-                    {[0,1,2].map((i) => <div key={i} style={{ width: 2, height: 2, borderRadius: "50%", background: "var(--text-muted)" }} />)}
+                    {[0, 1, 2].map((i) => <div key={i} style={{ width: 2, height: 2, borderRadius: "50%", background: "var(--text-muted)" }} />)}
                   </div>
                   <div style={{ flex: 1, height: 1, background: "var(--border)", marginLeft: "11px" }} />
                 </div>

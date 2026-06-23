@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import Button from "@/components/ui/Button";
+import Image from "next/image";
 
 const ROLE_HOME: Record<string, string> = {
   CLIENT: '/client/dashboard',
@@ -53,23 +54,13 @@ export default function LoginPage() {
     >
       <div style={{ width: "100%", maxWidth: 400 }} className="animate-fade-in">
         <div className="text-center mb-8">
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              background: "var(--primary)",
-              borderRadius: "var(--r-xl)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "2rem",
-              margin: "0 auto 16px",
-              boxShadow: "var(--shadow-primary)",
-            }}
-          >
-            🛵
-          </div>
-          <h1 style={{ fontSize: "28px", fontWeight: 800, color: "var(--text)" }}>Motu</h1>
+          <Image
+            src="/logo-motu.webp"
+            alt="Logo Motu"
+            width={200}
+            height={100}
+            className="mx-auto"
+          />
           <p className="mt-2 text-muted text-sm">Ingresa a tu cuenta</p>
         </div>
 

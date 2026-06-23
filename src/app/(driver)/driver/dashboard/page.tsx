@@ -12,7 +12,15 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Toast } from "@/components/ui/Toast";
 import { useDriverFeed, NewRideEvent } from "@/hooks/useDriverFeed";
 import { playNewRequest, playStatusNegative } from "@/lib/sounds";
-import { Bike, ArrowRight } from "lucide-react";
+import { Bike, ArrowRight, X, XIcon } from "lucide-react";
+import { AxiosError } from "axios";
+import Image from "next/image";
+
+export enum RideOfferStatus {
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REJECTED = "REJECTED",
+}
 
 interface Ride {
   id: string;
@@ -22,7 +30,7 @@ interface Ride {
   status: string;
   rideType: "TRANSPORT" | "DELIVERY";
   client: { fullName: string; phone: string };
-  offers: { id: string; counterPrice: number; driverId: string }[];
+  offers: { id: string; counterPrice: number; driverId: string, status: RideOfferStatus }[];
 }
 
 const DRIVER_NAV = [
@@ -36,10 +44,12 @@ export default function DriverDashboardPage() {
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelToast, setCancelToast] = useState(false);
+  const [rejectToast, setRejectToast] = useState(false);
   // Modal state
   const [selectedRideId, setSelectedRideId] = useState<string | null>(null);
   const [modalSubmitting, setModalSubmitting] = useState(false);
   const [modalError, setModalError] = useState("");
+  const [modalPay, setModalPay] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -97,6 +107,18 @@ export default function DriverDashboardPage() {
       });
       setSelectedRideId((prev) => (prev === rideId ? null : prev));
     },
+    onOfferRejected: (offerId: string) => {
+      setRides((prev) =>
+        prev.map((r) => ({
+          ...r,
+          offers: r.offers.map((o) =>
+            o.id === offerId ? { ...o, status: RideOfferStatus.REJECTED } : o,
+          ),
+        })),
+      );
+      playStatusNegative();
+      setRejectToast(true);
+    },
   });
 
   function openModal(rideId: string) {
@@ -116,9 +138,20 @@ export default function DriverDashboardPage() {
       await api.post(`/api/rides/${rideId}/accept-direct`);
       router.push(`/driver/ongoing/${rideId}`);
     } catch (err: unknown) {
-      if (err instanceof Error) {
+      if (err instanceof AxiosError) {
+        console.log(err.response?.data)
+        if (err.response?.status === 400) {
+          setModalError(err.response.data.message);
+        } 
+
+        if (err.response?.status === 403 && err.response.data.requiresPass) {
+          closeModal()
+          setModalPay(true);
+        }
+      } else if (err instanceof Error) {
         setModalError(err.message);
       }
+
       setModalSubmitting(false);
     }
   }
@@ -131,17 +164,32 @@ export default function DriverDashboardPage() {
     setModalSubmitting(true);
     setModalError("");
     try {
-      await api.post(`/api/rides/${rideId}/offers`, { counterPrice: price });
+      const { data: offer } = await api.post<{ id: string }>(`/api/rides/${rideId}/offers`, { counterPrice: price });
       setRides((prev) =>
         prev.map((r) =>
           r.id === rideId
-            ? { ...r, offers: [...r.offers, { id: "sent", counterPrice: price, driverId: user?.id ?? "" }] }
+            ? { 
+              ...r, 
+              offers: [
+                ...r.offers,
+                { id: offer.id, counterPrice: price, driverId: user?.id ?? "", status: RideOfferStatus.PENDING }
+              ]}
             : r,
         ),
       );
       closeModal();
     } catch (err: unknown) {
-      if (err instanceof Error) {
+      if (err instanceof AxiosError) {
+        console.log(err.response?.data)
+        if (err.response?.status === 400) {
+          setModalError(err.response.data.message);
+        } 
+
+        if (err.response?.status === 403 && err.response.data.requiresPass) {
+          closeModal()
+          setModalPay(true);
+        }
+      } else if (err instanceof Error) {
         setModalError(err.message);
       }
     } finally {
@@ -182,6 +230,16 @@ export default function DriverDashboardPage() {
         />
       )}
 
+      {rejectToast && (
+        <Toast
+          type="error"
+          icon="x"
+          message="Oferta rechazada"
+          subMessage="El cliente rechazó tu oferta"
+          onDismiss={() => setRejectToast(false)}
+        />
+      )}
+
       {selectedRide && (
         <RideDetailModal
           ride={selectedRide}
@@ -192,6 +250,63 @@ export default function DriverDashboardPage() {
           onAcceptDirect={acceptDirect}
           onSubmitOffer={submitOffer}
         />
+      )}
+
+      {modalPay && (
+        <div style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          top:0,
+          zIndex:102,
+          background: "#0000007e",
+          justifyContent: "center",
+          alignItems: "center",
+          display: "flex",
+          flexDirection: "column",
+          gap: "16px",
+        }}>
+          <div style={{
+            width:"100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "10px",
+            borderRadius: "12px",
+          }}>
+            <button 
+              onClick={() => setModalPay(false)}
+              style={{
+                border: "none",
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "20px",
+                fontWeight: "bold",
+                color: "#000",
+                borderRadius: "50%",
+                marginBottom: 10
+              }}
+            ><XIcon color="#000"/>
+            </button>
+            <div style={{
+              overflow: "hidden",
+              borderRadius: 12,
+              border: "1px solid #000",
+              maxWidth: 320,
+              maxHeight: 250,
+            }}>
+              {/* WhatsApp */}
+              <a href="https://wa.link/qilxkj" target="_blank" rel="noopener noreferrer">
+                <Image src="/banner-pagar.png" alt="Pagar" width={320} height={250} className="w-full h-full object-cover" />
+              </a>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="page-content">
@@ -267,7 +382,7 @@ export default function DriverDashboardPage() {
             ) : (
               <div className="stagger" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {pendingRides.map((ride) => {
-                  const alreadyOffered = ride.offers.some((o) => o.driverId === user?.id);
+                  const alreadyOffered = ride.offers.some((o) => o.driverId === user?.id && o.status === RideOfferStatus.PENDING);
 
                   return (
                     <div

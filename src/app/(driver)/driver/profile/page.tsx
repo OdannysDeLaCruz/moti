@@ -9,22 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import Image from "next/image";
 import { MapPin, Mail, Phone, Car, LogOut, Gift, User } from "lucide-react";
 
-interface DriverData {
-  fullName: string;
-  email: string;
-  phone: string;
-  driverProfile: {
-    status: string;
-    vehiclePlate: string;
-    vehicleModel: string;
-    freeRidesUsed: number;
-    passExpiresAt: string | null;
-    createdAt: string;
-    profilePhotoUrl: string;
-  } | null;
-}
-
-const FREE_RIDES_TOTAL = 5;
+// const FREE_RIDES_TOTAL = 2;
 
 const DRIVER_NAV = [
   { href: "/driver/dashboard", label: "Carreras", icon: "🏍️" },
@@ -33,9 +18,10 @@ const DRIVER_NAV = [
 
 export default function DriverProfilePage() {
   const router = useRouter();
-  const { user, loading } = useAuthGuard("DRIVER") as { user: DriverData | null; loading: boolean };
+  const { user, loading } = useAuthGuard("DRIVER");
   const { logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const FREE_RIDES_TOTAL = user?.maxFreeRides || 2;
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -48,6 +34,7 @@ export default function DriverProfilePage() {
   const ridesUsed = profile?.freeRidesUsed ?? 0;
   const ridesLeft = Math.max(0, FREE_RIDES_TOTAL - ridesUsed);
   const freeUsedUp = ridesUsed >= FREE_RIDES_TOTAL;
+  console.log('freeUsedUp', freeUsedUp)
 
   return (
     <div className="page">
@@ -137,7 +124,7 @@ export default function DriverProfilePage() {
                     background: "var(--warning-pale)", borderRadius: "var(--r-sm)",
                     padding: "10px 12px", fontSize: "13px", color: "var(--warning)"
                   }}>
-                    <p style={{ fontWeight: 700, marginBottom: "2px" }}>Ya usaste tus 5 viajes gratuitos</p>
+                    <p style={{ fontWeight: 700, marginBottom: "2px" }}>Ya usaste tus {FREE_RIDES_TOTAL} viajes gratuitos</p>
                     <p style={{ color: "var(--text-muted)" }}>Debes pagar la cuota diaria para seguir recibiendo carreras.</p>
                   </div>
                 )

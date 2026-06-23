@@ -19,7 +19,11 @@ export interface AuthUser {
     passExpiresAt: string | null;
     vehiclePlate: string;
     vehicleModel: string;
+    createdAt: string;
+    profilePhotoUrl: string;
   } | null;
+  passActive?: boolean;
+  maxFreeRides?: number;
 }
 
 interface AuthContextValue {
