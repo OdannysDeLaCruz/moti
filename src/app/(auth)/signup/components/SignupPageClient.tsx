@@ -42,7 +42,6 @@ export default function SignupPageClient({
 
   const [form, setForm] = useState({
     fullName: "",
-    // email: "",
     phone: "",
     password: "",
     role: defaultRole,
