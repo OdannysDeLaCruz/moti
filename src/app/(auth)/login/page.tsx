@@ -21,7 +21,7 @@ export default function LoginPage() {
     if (!authLoading && user) router.replace(ROLE_HOME[user.role] ?? '/');
   }, [user, authLoading, router]);
 
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,10 +32,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(phone, password);
       router.push("/");
     } catch {
-      setError("Correo o contraseña incorrectos.");
+      setError("Número de teléfono o contraseña incorrectos.");
     } finally {
       setLoading(false);
     }
@@ -67,15 +67,16 @@ export default function LoginPage() {
         <div className="card" style={{ padding: "28px 24px" }}>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="email">Correo electrónico</label>
+              <label htmlFor="phone">Numero de teléfono</label>
               <input
-                id="email"
-                type="email"
-                placeholder="tu@correo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="phone"
+                type="tel"
+                placeholder="Ej: 301 2001245"
+                value={phone}
+                maxLength={10}
+                onChange={(e) => setPhone(e.target.value)}
                 required
-                autoComplete="email"
+                autoComplete="phone"
               />
             </div>
 
@@ -103,14 +104,20 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="divider">o</div>
-
-          <p className="text-center text-sm text-muted">
+          <p className="text-center text-sm text-muted mt-2">
             ¿No tienes cuenta?{" "}
             <Link href="/signup" className="text-primary font-semibold">
               Crear cuenta gratis
             </Link>
           </p>
+
+          <div className="divider">o</div>
+
+          <div className="flex items-center justify-center mt-4">
+            <Button type="button" variant="accent" fullWidth loading={loading} id="btn-login" onClick={() => router.push("/signup?tab=driver")}>
+              Quiero ser conductor
+            </Button>
+          </div>
         </div>
       </div>
     </div>

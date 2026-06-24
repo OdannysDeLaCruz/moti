@@ -16,9 +16,11 @@ const ROLE_HOME: Record<string, string> = {
 type Role = "CLIENT" | "DRIVER";
 
 const ROLES: { value: Role; label: string; desc: string }[] = [
-  { value: "CLIENT", label: "Cliente", desc: "Pido carreras y domicilios" },
-  { value: "DRIVER", label: "Conductor", desc: "Ofrezco el servicio de carrera" },
+  { value: "CLIENT", label: "Cliente", desc: "Encontrar conductores" },
+  { value: "DRIVER", label: "Conductor", desc: "Ofrecer servicios" },
 ];
+
+let VISIBLE_ROLES: typeof ROLES = [];
 
 export default function SignupPage() {
   const router = useRouter();
@@ -30,13 +32,28 @@ export default function SignupPage() {
 
   const [form, setForm] = useState({
     fullName: "",
-    email: "",
+    // email: "",
     phone: "",
     password: "",
     role: "CLIENT" as Role,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  useEffect(() => {
+    console.log('Entro')
+    const urlParams = new URLSearchParams(window.location.search);
+    const role = urlParams.get("tab")?.toUpperCase() as Role;
+    console.log(role)
+    
+    if (role === 'DRIVER') {
+      setForm((prev) => ({ ...prev, role }));
+      VISIBLE_ROLES = ROLES.filter((r) => r.value !== "CLIENT");
+    }else {
+      setForm((prev) => ({ ...prev, role: "CLIENT" }));
+      VISIBLE_ROLES = ROLES;
+    }
+  }, []);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -79,16 +96,22 @@ export default function SignupPage() {
             height={50}
             className="mx-auto"
           />
-          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>Crea tu cuenta</h1>
-          <p className="mt-1 text-muted text-sm">Únete a Motu y empieza a ganar dinero por tus servicios.</p>
+          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>
+            {form.role === 'DRIVER' ? 'Crea tu cuenta Motu Driver' : 'Crea tu cuenta'}
+          </h1>
+          <p className="mt-1 text-muted text-sm">
+            {form.role === 'DRIVER' ? 'Únete a Motu y empieza a ganar dinero por tus servicios.' : 'Encuentra conductores de confianza para tus viajes.'}
+          </p>
         </div>
 
         <div className="card" style={{ padding: "24px" }}>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>¿Cómo usarás Motu?</label>
-              <div className="grid-2">
-                {ROLES.map((r) => (
+              { VISIBLE_ROLES.length > 1 && (
+                  <label className="text-center">¿Cómo usarás Motu?</label>
+              )}
+              <div className={`flex justify-center gap-3 ${VISIBLE_ROLES.length > 1 ? 'grid-2' : 'grid-1'}`}>
+                {VISIBLE_ROLES.map((r) => (
                   <button
                     key={r.value}
                     type="button"
@@ -134,7 +157,7 @@ export default function SignupPage() {
               />
             </div>
 
-            <div className="form-group">
+            {/* <div className="form-group">
               <label htmlFor="email-signup">Correo electrónico</label>
               <input
                 id="email-signup"
@@ -146,10 +169,10 @@ export default function SignupPage() {
                 required
                 autoComplete="email"
               />
-            </div>
+            </div> */}
 
             <div className="form-group">
-              <label htmlFor="phone">Teléfono</label>
+              <label htmlFor="phone">Teléfono <small className="text-muted" style={{textTransform: 'lowercase'}}>(sin +57)</small></label>
               <input
                 id="phone"
                 name="phone"

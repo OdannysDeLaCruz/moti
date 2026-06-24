@@ -31,7 +31,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: {
-    email: string;
+    // email: string;
     password: string;
     fullName: string;
     phone: string;
@@ -61,9 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void refreshUser().finally(() => setLoading(false));
   }, [refreshUser]);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (phone: string, password: string) => {
+    // Eliminar + del número de teléfono
+    const phoneWithoutCountryCode = phone.replace('+', '');
+    console.log(phoneWithoutCountryCode);
     const { data } = await api.post<{ user: AuthUser; accessToken: string }>('/auth/login', {
-      email,
+      phone: phoneWithoutCountryCode,
       password,
     });
     setAccessToken(data.accessToken);
@@ -71,8 +74,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (form: { email: string; password: string; fullName: string; phone: string; role: UserRole }) => {
-      const { data } = await api.post<{ user: AuthUser; accessToken: string }>('/auth/register', form);
+    async (form: {
+      // email: string;
+      phone: string;
+      password: string;
+      fullName: string;
+      role: UserRole
+    }) => {
+      // Eliminar + del número de teléfono
+      const { phone, ...rest } = form;
+      const phoneWithoutCountryCode = phone.replace('+', '');
+      console.log(phoneWithoutCountryCode);
+      const { data } = await api.post<{ user: AuthUser; accessToken: string }>('/auth/register', 
+        {
+          ...rest,
+          phone: phoneWithoutCountryCode
+        });
       setAccessToken(data.accessToken);
       setUser(data.user);
     },
@@ -82,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await api.post('/auth/logout');
-    } catch {}
+    } catch { }
     setAccessToken(null);
     setUser(null);
   }, []);
