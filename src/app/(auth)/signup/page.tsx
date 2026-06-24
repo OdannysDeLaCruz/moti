@@ -88,18 +88,19 @@ export default function SignupPage() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 400 }} className="animate-fade-in">
-        <div className="text-center mb-6">
+        <div className="flex flex-col items-center mb-6">
           <Image
             src="/logo-motu.webp"
             alt="Logo Motu"
             width={100}
             height={50}
-            className="mx-auto"
+            className="mx-auto w-auto h-auto"
+            loading="eager"
           />
-          <h1 style={{ fontSize: "24px", fontWeight: 800 }}>
+          <h1 className="mt-6 font-[800] text-3xl">
             {form.role === 'DRIVER' ? 'Crea tu cuenta Motu Driver' : 'Crea tu cuenta'}
           </h1>
-          <p className="mt-1 text-muted text-sm">
+          <p className="mt-1 text-muted text-sm text-center">
             {form.role === 'DRIVER' ? 'Únete a Motu y empieza a ganar dinero por tus servicios.' : 'Encuentra conductores de confianza para tus viajes.'}
           </p>
         </div>

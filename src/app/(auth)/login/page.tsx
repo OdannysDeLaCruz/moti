@@ -45,7 +45,7 @@ export default function LoginPage() {
     <div
       style={{
         minHeight: "100dvh",
-        background: "linear-gradient(160deg, var(--primary-xpale) 0%, var(--bg) 50%)",
+        background: "linear-gradient(160deg, var(--primary-pale) 0%, var(--bg) 50%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -53,15 +53,19 @@ export default function LoginPage() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 400 }} className="animate-fade-in">
-        <div className="text-center mb-8">
+        <div className="flex flex-col items-center mb-6">
           <Image
             src="/logo-motu.webp"
             alt="Logo Motu"
-            width={200}
-            height={100}
-            className="mx-auto"
+            width={100}
+            height={50}
+            className="mx-auto w-auto h-auto"
+            loading="eager"
           />
-          <p className="mt-2 text-muted text-sm">Ingresa a tu cuenta</p>
+          <h1 className="mt-6 font-[800] text-3xl">Ingresa a tu cuenta</h1>
+          <p className="mt-1 text-muted text-sm text-center">
+            Solicita un conductor y acepta la oferta que mas te convenga.
+          </p>
         </div>
 
         <div className="card" style={{ padding: "28px 24px" }}>
@@ -104,7 +108,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted mt-2">
+          <p className="text-center text-sm text-muted mt-4">
             ¿No tienes cuenta?{" "}
             <Link href="/signup" className="text-primary font-semibold">
               Crear cuenta gratis
