@@ -12,7 +12,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Toast } from "@/components/ui/Toast";
 import { useDriverFeed, NewRideEvent } from "@/hooks/useDriverFeed";
 import { playNewRequest, playStatusNegative } from "@/lib/sounds";
-import { Bike, ArrowRight, X, XIcon } from "lucide-react";
+import { Bike, ArrowRight, XIcon } from "lucide-react";
 import { AxiosError } from "axios";
 import Image from "next/image";
 

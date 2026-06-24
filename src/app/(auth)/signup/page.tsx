@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import Button from "@/components/ui/Button";
@@ -20,40 +20,35 @@ const ROLES: { value: Role; label: string; desc: string }[] = [
   { value: "DRIVER", label: "Conductor", desc: "Ofrecer servicios" },
 ];
 
-let VISIBLE_ROLES: typeof ROLES = [];
-
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register, user, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const tab = searchParams.get("tab")?.toUpperCase()
 
-  useEffect(() => {
-    if (!authLoading && user) router.replace(ROLE_HOME[user.role] ?? '/');
-  }, [user, authLoading, router]);
+  const defaultRole: Role = tab === "DRIVER"
+    ? "DRIVER"
+    : "CLIENT";
+
+  const isDriverSignup = tab === "DRIVER";
+  const visibleRoles = isDriverSignup
+    ? ROLES.filter((r) => r.value !== "CLIENT")
+    : ROLES;
 
   const [form, setForm] = useState({
     fullName: "",
     // email: "",
     phone: "",
     password: "",
-    role: "CLIENT" as Role,
+    role: defaultRole,
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  
+
+
   useEffect(() => {
-    console.log('Entro')
-    const urlParams = new URLSearchParams(window.location.search);
-    const role = urlParams.get("tab")?.toUpperCase() as Role;
-    console.log(role)
-    
-    if (role === 'DRIVER') {
-      setForm((prev) => ({ ...prev, role }));
-      VISIBLE_ROLES = ROLES.filter((r) => r.value !== "CLIENT");
-    }else {
-      setForm((prev) => ({ ...prev, role: "CLIENT" }));
-      VISIBLE_ROLES = ROLES;
-    }
-  }, []);
+    if (!authLoading && user) router.replace(ROLE_HOME[user.role] ?? '/');
+  }, [user, authLoading, router]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -97,8 +92,8 @@ export default function SignupPage() {
             className="mx-auto w-auto h-auto"
             loading="eager"
           />
-          <h1 className="mt-6 font-[800] text-3xl">
-            {form.role === 'DRIVER' ? 'Crea tu cuenta Motu Driver' : 'Crea tu cuenta'}
+          <h1 className="mt-6 font-[800] text-3xl text-center">
+            {form.role === 'DRIVER' ? (<span>Crea tu cuenta <br /> Motu Driver</span>) : 'Crea tu cuenta'}
           </h1>
           <p className="mt-1 text-muted text-sm text-center">
             {form.role === 'DRIVER' ? 'Únete a Motu y empieza a ganar dinero por tus servicios.' : 'Encuentra conductores de confianza para tus viajes.'}
@@ -108,11 +103,11 @@ export default function SignupPage() {
         <div className="card" style={{ padding: "24px" }}>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              { VISIBLE_ROLES.length > 1 && (
-                  <label className="text-center">¿Cómo usarás Motu?</label>
+              {visibleRoles.length > 1 && (
+                <label className="text-center">¿Cómo usarás Motu?</label>
               )}
-              <div className={`flex justify-center gap-3 ${VISIBLE_ROLES.length > 1 ? 'grid-2' : 'grid-1'}`}>
-                {VISIBLE_ROLES.map((r) => (
+              <div className={`flex justify-center gap-3 ${visibleRoles.length > 1 ? 'grid-2' : 'grid-1'}`}>
+                {visibleRoles.map((r) => (
                   <button
                     key={r.value}
                     type="button"
@@ -173,7 +168,7 @@ export default function SignupPage() {
             </div> */}
 
             <div className="form-group">
-              <label htmlFor="phone">Teléfono <small className="text-muted" style={{textTransform: 'lowercase'}}>(sin +57)</small></label>
+              <label htmlFor="phone">Teléfono <small className="text-muted" style={{ textTransform: 'lowercase' }}>(sin +57)</small></label>
               <input
                 id="phone"
                 name="phone"
