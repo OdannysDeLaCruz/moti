@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
-import Button from "@/components/ui/Button";
+import DocThumb from "@/components/admin/DocThumb";
+import DriverVerifyActions from "@/components/admin/DriverVerifyActions";
 import api from "@/lib/api-client";
-import { Camera, Bike, CheckCircle, User, AlertTriangle } from "lucide-react";
+import { Bike, CheckCircle, User, AlertTriangle } from "lucide-react";
 
 interface DriverProfile {
   status: string;
@@ -23,75 +22,9 @@ interface DriverProfile {
 interface Driver {
   id: string;
   fullName: string;
-  email: string;
+  email: string | null;
   phone: string;
   driverProfile: DriverProfile | null;
-}
-
-function DocThumb({
-  label,
-  url,
-}: {
-  label: string;
-  url: string | null;
-}) {
-  if (!url) {
-    return (
-      <div
-        style={{
-          borderRadius: "var(--r-sm)",
-          background: "var(--surface-2)",
-          border: "1px dashed var(--border-strong)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "10px 4px",
-          gap: "4px",
-          minHeight: "80px",
-        }}
-      >
-        <span style={{ display: "flex", justifyContent: "center", opacity: 0.4 }}><Camera size={20} /></span>
-        <span style={{ fontSize: "10px", color: "var(--text-dim)", textAlign: "center" }}>
-          Sin foto
-        </span>
-        <span style={{ fontSize: "10px", color: "var(--warning)", fontWeight: 600 }}>
-          {label}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ display: "block", borderRadius: "var(--r-sm)", overflow: "hidden", position: "relative" }}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt={label}
-        style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block" }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: "linear-gradient(transparent, rgba(0,0,0,0.55))",
-          padding: "4px 6px",
-          fontSize: "10px",
-          fontWeight: 600,
-          color: "#fff",
-        }}
-      >
-        {label} ↗
-      </div>
-    </a>
-  );
 }
 
 function DriverCard({
@@ -103,7 +36,6 @@ function DriverCard({
   onVerify: (id: string, action: "APPROVE" | "REJECT") => void;
   processing: string | null;
 }) {
-  const [rejecting, setRejecting] = useState(false);
   const p = driver.driverProfile!;
   const hasMissingDocs =
     !p.profilePhotoUrl || !p.documentIdFrontUrl || !p.documentIdBackUrl ||
@@ -162,7 +94,7 @@ function DriverCard({
               </span>
             )}
           </div>
-          <p className="text-muted" style={{ fontSize: "12px" }}>{driver.email}</p>
+          <p className="text-muted" style={{ fontSize: "12px" }}>{driver.email ?? "—"}</p>
           <p className="text-muted" style={{ fontSize: "12px" }}>{driver.phone}</p>
         </div>
       </div>
@@ -223,68 +155,19 @@ function DriverCard({
       </div>
 
       {/* Actions */}
-      <div
-        style={{
-          padding: "14px 16px",
-          borderTop: "1px solid var(--border)",
-          background: rejecting ? "var(--danger-pale)" : undefined,
-          transition: "background 0.2s",
-        }}
-      >
-        {rejecting ? (
-          <div>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--danger)", marginBottom: "10px" }}>
-              ¿Confirmar rechazo del perfil de {driver.fullName.split(" ")[0]}?
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-              <Button
-                variant="ghost"
-                fullWidth
-                size="sm"
-                onClick={() => setRejecting(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                fullWidth
-                size="sm"
-                loading={processing === `${driver.id}-REJECT`}
-                onClick={() => onVerify(driver.id, "REJECT")}
-              >
-                Sí, rechazar
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-            <Button
-              variant="ghost"
-              fullWidth
-              size="sm"
-              onClick={() => setRejecting(true)}
-            >
-              Rechazar
-            </Button>
-            <Button
-              variant="success"
-              fullWidth
-              size="sm"
-              loading={processing === `${driver.id}-APPROVE`}
-              onClick={() => onVerify(driver.id, "APPROVE")}
-            >
-              Aprobar
-            </Button>
-          </div>
-        )}
+      <div style={{ padding: "14px 16px", borderTop: "1px solid var(--border)" }}>
+        <DriverVerifyActions
+          driverId={driver.id}
+          driverFirstName={driver.fullName.split(" ")[0]}
+          onVerify={onVerify}
+          processing={processing}
+        />
       </div>
     </div>
   );
 }
 
 export default function AdminVerifyPage() {
-  const router = useRouter();
-  useAuthGuard('ADMIN');
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -292,8 +175,8 @@ export default function AdminVerifyPage() {
 
   useEffect(() => {
     api
-      .get<Driver[]>("/api/admin/drivers")
-      .then(({ data }) => setDrivers(Array.isArray(data) ? data : []))
+      .get<{ items: Driver[]; total: number }>("/api/admin/drivers?status=PENDING&take=100")
+      .then(({ data }) => setDrivers(Array.isArray(data?.items) ? data.items : []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -324,37 +207,10 @@ export default function AdminVerifyPage() {
   }
 
   return (
-    <div className="page">
-      <div className="screen-header">
-        <button
-          onClick={() => router.push("/admin/dashboard")}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "20px",
-            padding: "4px 8px",
-            color: "var(--text)",
-          }}
-        >
-          ←
-        </button>
-        <span style={{ flex: 1, fontWeight: 700, fontSize: "17px" }}>Verificar Conductores</span>
-        {!loading && drivers.length > 0 && (
-          <span
-            style={{
-              background: "var(--warning)",
-              color: "#fff",
-              borderRadius: "var(--r-full)",
-              padding: "2px 10px",
-              fontSize: "13px",
-              fontWeight: 700,
-            }}
-          >
-            {drivers.length}
-          </span>
-        )}
-      </div>
+    <div className="animate-fade-in">
+      {!loading && drivers.length > 0 && (
+        <p className="text-sm text-muted mb-4">{drivers.length} conductor{drivers.length !== 1 ? "es" : ""} pendiente{drivers.length !== 1 ? "s" : ""} de revisión</p>
+      )}
 
       {/* Toast */}
       {toast && (
@@ -380,36 +236,34 @@ export default function AdminVerifyPage() {
         </div>
       )}
 
-      <div className="page-content">
-        {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}>
-            <div className="spinner" />
+      {loading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}>
+          <div className="spinner" />
+        </div>
+      ) : drivers.length === 0 ? (
+        <div className="empty-state" style={{ paddingTop: "60px" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+            <CheckCircle size={48} color="var(--success)" />
           </div>
-        ) : drivers.length === 0 ? (
-          <div className="empty-state" style={{ paddingTop: "60px" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
-              <CheckCircle size={48} color="var(--success)" />
-            </div>
-            <p className="font-semibold" style={{ fontSize: "17px" }}>Sin conductores pendientes</p>
-            <p className="text-sm text-muted" style={{ marginTop: "6px" }}>
-              Todos los perfiles han sido revisados.
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            {drivers
-              .filter((d) => d.driverProfile !== null)
-              .map((driver) => (
-                <DriverCard
-                  key={driver.id}
-                  driver={driver}
-                  onVerify={handleVerify}
-                  processing={processing}
-                />
-              ))}
-          </div>
-        )}
-      </div>
+          <p className="font-semibold" style={{ fontSize: "17px" }}>Sin conductores pendientes</p>
+          <p className="text-sm text-muted" style={{ marginTop: "6px" }}>
+            Todos los perfiles han sido revisados.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          {drivers
+            .filter((d) => d.driverProfile !== null)
+            .map((driver) => (
+              <DriverCard
+                key={driver.id}
+                driver={driver}
+                onVerify={handleVerify}
+                processing={processing}
+              />
+            ))}
+        </div>
+      )}
     </div>
   );
 }

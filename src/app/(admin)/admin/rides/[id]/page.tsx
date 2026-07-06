@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
-import { MapPin, Navigation, Phone, User, Bike, Package, FileText, Clock } from "lucide-react";
+import { MapPin, Navigation, Phone, User, Bike, Package, FileText, Clock, Percent } from "lucide-react";
 
 interface Offer {
   id: string;
@@ -33,6 +32,13 @@ interface Ride {
   client: { fullName: string; phone: string; email: string };
   driver: { fullName: string; phone: string; driverProfile?: { vehiclePlate: string | null; vehicleModel: string } | null } | null;
   offers: Offer[];
+  commission: {
+    baseAmount: number;
+    commissionRate: number;
+    commissionAmount: number;
+    status: "UNPAID" | "PAID";
+    paidAt: string | null;
+  } | null;
 }
 
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
@@ -45,10 +51,20 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
   );
 }
 
+function BackLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "13px", fontWeight: 600, padding: "0 0 12px", display: "flex", alignItems: "center", gap: "4px" }}
+    >
+      ← Volver a Carreras
+    </button>
+  );
+}
+
 export default function AdminRideDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  useAuthGuard("ADMIN");
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -60,37 +76,25 @@ export default function AdminRideDetailPage() {
   }, [id]);
 
   if (loading) return (
-    <div className="page">
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100dvh" }}>
-        <div className="spinner spinner-lg" style={{ color: "var(--primary)" }} />
-      </div>
+    <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}>
+      <div className="spinner spinner-lg" style={{ color: "var(--primary)" }} />
     </div>
   );
 
   if (!ride) return (
-    <div className="page">
-      <div className="screen-header">
-        <button onClick={() => router.back()} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", padding: "4px 8px" }}>←</button>
-        <span style={{ flex: 1, fontWeight: 700, fontSize: "17px" }}>Detalle</span>
-      </div>
-      <div className="page-content"><div className="empty-state"><p>Carrera no encontrada.</p></div></div>
+    <div>
+      <BackLink onClick={() => router.back()} />
+      <div className="empty-state"><p>Carrera no encontrada.</p></div>
     </div>
   );
 
   const isActive = ["PENDING", "NEGOTIATING", "ACCEPTED", "HEADING_TO_PICKUP", "AT_PICKUP", "IN_PROGRESS"].includes(ride.status);
 
   return (
-    <div className="page">
-      <div className="screen-header">
-        <button onClick={() => router.back()}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", padding: "4px 8px", color: "var(--text)" }}>
-          ←
-        </button>
-        <span style={{ flex: 1, fontWeight: 700, fontSize: "17px" }}>Detalle de carrera</span>
-        <StatusBadge status={ride.status as never} />
-      </div>
+    <div className="animate-fade-in">
+      <BackLink onClick={() => router.back()} />
 
-      <div className="page-content" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
         {/* Tipo + precio */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -102,6 +106,7 @@ export default function AdminRideDetailPage() {
             <span style={{ fontWeight: 700, fontSize: "15px" }}>
               {ride.rideType === "DELIVERY" ? "Domicilio" : "Carrera"}
             </span>
+            <StatusBadge status={ride.status as never} />
           </div>
           <div style={{ textAlign: "right" }}>
             {ride.finalPrice ? (
@@ -202,6 +207,22 @@ export default function AdminRideDetailPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Comisión */}
+        {ride.commission && (
+          <div className="card" style={{ padding: "14px" }}>
+            <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "12px" }}>Comisión</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <InfoRow icon={<FileText size={14} />} label="Base" value={formatCOP(ride.commission.baseAmount)} />
+              <InfoRow icon={<Percent size={14} />} label="Tasa" value={`${ride.commission.commissionRate}%`} />
+              <InfoRow icon={<FileText size={14} />} label="Comisión" value={formatCOP(ride.commission.commissionAmount)} />
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "12px", color: "var(--text-muted)", minWidth: 70 }}>Estado</span>
+                <StatusBadge status={ride.commission.status} />
+              </div>
             </div>
           </div>
         )}

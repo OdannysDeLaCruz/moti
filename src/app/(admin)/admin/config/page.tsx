@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthGuard } from "@/hooks/useAuthGuard";
 import Button from "@/components/ui/Button";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
@@ -10,14 +8,13 @@ import api from "@/lib/api-client";
 interface Config {
   minRidePrice: string;
   maxFreeRides: number;
-  dailyPassPrice: string;
+  commissionRate: number;
+  passDurationDays: number;
 }
 
 export default function AdminConfigPage() {
-  const router = useRouter();
-  useAuthGuard('ADMIN');
   const [config, setConfig] = useState<Config | null>(null);
-  const [form, setForm] = useState({ minRidePrice: "", maxFreeRides: "", dailyPassPrice: "" });
+  const [form, setForm] = useState({ minRidePrice: "", maxFreeRides: "", commissionRate: "", passDurationDays: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -29,7 +26,8 @@ export default function AdminConfigPage() {
         setForm({
           minRidePrice: data.minRidePrice,
           maxFreeRides: String(data.maxFreeRides),
-          dailyPassPrice: data.dailyPassPrice,
+          commissionRate: String(data.commissionRate),
+          passDurationDays: String(data.passDurationDays),
         });
       })
       .catch(() => {})
@@ -45,7 +43,8 @@ export default function AdminConfigPage() {
       const { data } = await api.patch<Config>("/api/admin/config", {
         minRidePrice: Number(form.minRidePrice),
         maxFreeRides: Number(form.maxFreeRides),
-        dailyPassPrice: Number(form.dailyPassPrice),
+        commissionRate: Number(form.commissionRate),
+        passDurationDays: Number(form.passDurationDays),
       });
       setConfig(data);
       setMessage("Configuración guardada correctamente.");
@@ -57,18 +56,7 @@ export default function AdminConfigPage() {
   }
 
   return (
-    <div className="page">
-      <div className="screen-header">
-        <button
-          onClick={() => router.push("/admin/dashboard")}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", padding: "4px 8px" }}
-        >
-          ←
-        </button>
-        <span style={{ flex: 1, fontWeight: 700, fontSize: "17px" }}>Configuración del Sistema</span>
-      </div>
-
-      <div className="page-content">
+    <div className="animate-fade-in">
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "40px" }}>
             <div className="spinner" style={{ color: "var(--primary)" }} />
@@ -90,8 +78,12 @@ export default function AdminConfigPage() {
                     <span className="font-semibold">{config.maxFreeRides}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span className="text-muted text-sm">Precio pase diario</span>
-                    <span className="font-semibold">{formatCOP(Number(config.dailyPassPrice))}</span>
+                    <span className="text-muted text-sm">Tasa de comisión</span>
+                    <span className="font-semibold">{config.commissionRate}%</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span className="text-muted text-sm">Duración del pase</span>
+                    <span className="font-semibold">{config.passDurationDays} día(s)</span>
                   </div>
                 </div>
               </div>
@@ -133,15 +125,29 @@ export default function AdminConfigPage() {
                 />
               </div>
 
-              <div className="form-group" style={{ marginBottom: "24px" }}>
-                <label htmlFor="dailyPassPrice">Precio del pase diario (COP)</label>
+              <div className="form-group">
+                <label htmlFor="commissionRate">Tasa de comisión (%)</label>
                 <input
-                  id="dailyPassPrice"
+                  id="commissionRate"
                   type="number"
-                  min={500}
-                  step={100}
-                  value={form.dailyPassPrice}
-                  onChange={(e) => setForm((p) => ({ ...p, dailyPassPrice: e.target.value }))}
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  value={form.commissionRate}
+                  onChange={(e) => setForm((p) => ({ ...p, commissionRate: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: "24px" }}>
+                <label htmlFor="passDurationDays">Duración del pase (días)</label>
+                <input
+                  id="passDurationDays"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={form.passDurationDays}
+                  onChange={(e) => setForm((p) => ({ ...p, passDurationDays: e.target.value }))}
                   required
                 />
               </div>
@@ -152,7 +158,6 @@ export default function AdminConfigPage() {
             </form>
           </>
         )}
-      </div>
     </div>
   );
 }

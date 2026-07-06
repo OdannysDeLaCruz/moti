@@ -2,7 +2,8 @@ import React from "react";
 
 type RideStatus = "PENDING" | "NEGOTIATING" | "ACCEPTED" | "HEADING_TO_PICKUP" | "AT_PICKUP" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 type VerificationStatus = "PENDING" | "APPROVED" | "REJECTED";
-type StatusType = RideStatus | VerificationStatus | "ONLINE" | "OFFLINE";
+type CommissionStatus = "UNPAID" | "PAID";
+type StatusType = RideStatus | VerificationStatus | CommissionStatus | "ONLINE" | "OFFLINE";
 
 const STATUS_CONFIG: Record<string, { label: string; className: string; color: string }> = {
   PENDING:            { label: "Pendiente",    className: "badge-pending", color: "#eab308" },
@@ -17,6 +18,8 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; color: s
   REJECTED:           { label: "Rechazado",    className: "badge-danger",  color: "#dc2626" },
   ONLINE:             { label: "En línea",     className: "badge-success", color: "#16a34a" },
   OFFLINE:            { label: "Desconectado", className: "badge-neutral", color: "#94a3b8" },
+  UNPAID:             { label: "Sin pagar",    className: "badge-danger",  color: "#dc2626" },
+  PAID:               { label: "Pagada",       className: "badge-success", color: "#16a34a" },
 };
 
 interface StatusBadgeProps {
