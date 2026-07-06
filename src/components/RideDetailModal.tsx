@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Bike } from "lucide-react";
 import { formatCOP } from "@/lib/whatsapp";
 
@@ -38,6 +39,34 @@ export default function RideDetailModal({
   onAcceptDirect,
   onSubmitOffer,
 }: Props) {
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef(0);
+  const dragCurrentY = useRef(0);
+
+  function onDragStart(e: React.TouchEvent) {
+    dragStartY.current = e.touches[0].clientY;
+    dragCurrentY.current = 0;
+    if (sheetRef.current) sheetRef.current.style.transition = "none";
+  }
+
+  function onDragMove(e: React.TouchEvent) {
+    const delta = Math.max(0, e.touches[0].clientY - dragStartY.current);
+    dragCurrentY.current = delta;
+    if (sheetRef.current) sheetRef.current.style.transform = `translateY(${delta}px)`;
+  }
+
+  function onDragEnd() {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    sheet.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1)";
+    if (dragCurrentY.current > 100) {
+      sheet.style.transform = "translateY(100%)";
+      setTimeout(onClose, 300);
+    } else {
+      sheet.style.transform = "translateY(0)";
+    }
+  }
+
   const alreadyOffered = ride.offers.some((o) => o.driverId === currentUserId && o.status === RideOfferStatus.PENDING);
   const initialPrice = Number(ride.initialPrice);
 
@@ -67,6 +96,7 @@ export default function RideDetailModal({
 
       {/* Bottom sheet */}
       <div
+        ref={sheetRef}
         style={{
           position: "fixed",
           bottom: 0,
@@ -83,10 +113,24 @@ export default function RideDetailModal({
           padding: "12px 20px max(32px, env(safe-area-inset-bottom))",
           animation: "slideUp 280ms cubic-bezier(0.4,0,0.2,1) both",
           boxShadow: "0 -8px 40px rgba(15,23,42,0.15)",
+          willChange: "transform",
         }}
       >
-        {/* Handle */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        {/* Handle — drag area */}
+        <div
+          onTouchStart={onDragStart}
+          onTouchMove={onDragMove}
+          onTouchEnd={onDragEnd}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            padding: "4px 0 20px",
+            margin: "-12px -20px 0",
+            touchAction: "none",
+            cursor: "grab",
+            userSelect: "none",
+          }}
+        >
           <div style={{ width: 40, height: 4, borderRadius: 2, background: "var(--border-strong)" }} />
         </div>
 
