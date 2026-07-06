@@ -45,6 +45,8 @@ interface Ride {
   destLng?: number | null;
   initialPrice: string;
   finalPrice: string | null;
+  cashbackApplied?: number;
+  cashbackRequested?: number;
   status: string;
   rideType: "TRANSPORT" | "DELIVERY";
   notes?: string | null;
@@ -354,6 +356,11 @@ export default function NegotiationPage() {
                   <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
                     <p className="text-muted text-sm">Buscando conductores...</p>
                     <div className="spinner mt-4" style={{ color: "var(--primary)", margin: "16px auto 0" }} />
+                    {!!ride.cashbackRequested && ride.cashbackRequested > 0 && (
+                      <p className="text-xs" style={{ color: "var(--success)", fontWeight: 600, marginTop: "12px" }}>
+                        Se aplicará {formatCOP(ride.cashbackRequested)} de tu cashback cuando un conductor acepte
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="stagger" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -391,6 +398,13 @@ export default function NegotiationPage() {
                               </span>
                             </div>
                           </div>
+
+                          {!!ride.cashbackRequested && ride.cashbackRequested > 0 && (
+                            <div style={{ marginBottom: "12px", fontSize: "12px", color: "var(--success)", fontWeight: 600 }}>
+                              Se aplicará {formatCOP(Math.min(ride.cashbackRequested, offer.counterPrice))} de tu cashback al aceptar
+                            </div>
+                          )}
+
                           <div style={{ display: "flex", gap: "8px" }}>
                             <Button
                               variant="ghost"
@@ -500,6 +514,19 @@ export default function NegotiationPage() {
                     <span className="font-semibold text-md">Precio acordado</span>
                     <span className="price-tag-primary text-md">{formatCOP(Number(ride.finalPrice))}</span>
                   </div>
+                )}
+
+                {ride.finalPrice && !!ride.cashbackApplied && ride.cashbackApplied > 0 && (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", alignItems: "center" }}>
+                      <span className="text-sm text-muted">Cashback aplicado</span>
+                      <span className="text-sm font-semibold" style={{ color: "var(--success)" }}>-{formatCOP(ride.cashbackApplied)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", paddingTop: "8px", borderTop: "1px solid var(--border)", alignItems: "center" }}>
+                      <span className="font-semibold text-sm">Total a pagar en efectivo</span>
+                      <span className="price-tag-accent" style={{ fontSize: "16px" }}>{formatCOP(Number(ride.finalPrice) - ride.cashbackApplied)}</span>
+                    </div>
+                  </>
                 )}
 
                 {ride.notes && (

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
-import { User } from "lucide-react";
+import { formatCOP } from "@/lib/whatsapp";
+import api from "@/lib/api-client";
+import { User, Wallet, ChevronRight } from "lucide-react";
 
 interface UserData {
   fullName: string;
@@ -27,6 +29,13 @@ export default function ClientProfilePage() {
   const { user, loading } = useAuthGuard('CLIENT') as { user: UserData, loading: boolean };
   const { logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const [cashbackBalance, setCashbackBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    api.get<{ balance: number }>("/api/cashback/me")
+      .then(({ data }) => setCashbackBalance(data.balance))
+      .catch(() => {});
+  }, []);
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -88,6 +97,29 @@ export default function ClientProfilePage() {
                   </span>
                 </div>
               </div>
+            </div>
+
+            <div
+              className="card-ghost mb-4 pointer"
+              onClick={() => router.push("/client/cashback")}
+              style={{ display: "flex", alignItems: "center", gap: "12px" }}
+            >
+              <div
+                style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: "var(--accent-pale)", display: "flex",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}
+              >
+                <Wallet size={18} color="var(--accent-dark)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p className="font-semibold text-sm">Mi cashback</p>
+                <p className="text-muted text-xs">
+                  {cashbackBalance !== null ? `Saldo disponible: ${formatCOP(cashbackBalance)}` : "Ver saldo e historial"}
+                </p>
+              </div>
+              <ChevronRight size={18} color="var(--text-muted)" />
             </div>
 
             <Button variant="danger" fullWidth loading={signingOut} onClick={handleSignOut}>

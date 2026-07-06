@@ -21,6 +21,7 @@ interface Ride {
   originLat: number;
   originLng: number;
   finalPrice: string | null;
+  cashbackApplied?: number;
   status: string;
   rideType: "TRANSPORT" | "DELIVERY";
   client: { fullName: string; phone: string };
@@ -149,9 +150,22 @@ export default function DriverRidePage() {
 
           {ride.finalPrice && (
             <div style={{ borderTop: "1px solid var(--border)", marginTop: "12px", paddingTop: "12px", display: "flex", justifyContent: "space-between" }}>
-              <span className="text-muted text-sm">Tarifa acordada</span>
+              <span className="text-muted text-sm">{ride.cashbackApplied ? "Valor acordado" : "Tarifa acordada"}</span>
               <span className="price-tag-primary">{formatCOP(Number(ride.finalPrice))}</span>
             </div>
+          )}
+
+          {ride.finalPrice && !!ride.cashbackApplied && ride.cashbackApplied > 0 && (
+            <>
+              <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between" }}>
+                <span className="text-muted text-sm">Cashback del cliente</span>
+                <span className="text-sm font-semibold" style={{ color: "var(--danger)" }}>-{formatCOP(ride.cashbackApplied)}</span>
+              </div>
+              <div style={{ marginTop: "8px", borderTop: "1px solid var(--border)", paddingTop: "8px", display: "flex", justifyContent: "space-between" }}>
+                <span className="text-sm font-semibold">Total a cobrar en efectivo</span>
+                <span className="price-tag-accent">{formatCOP(Number(ride.finalPrice) - ride.cashbackApplied)}</span>
+              </div>
+            </>
           )}
         </div>
 

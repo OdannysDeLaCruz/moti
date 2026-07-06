@@ -26,6 +26,7 @@ interface Ride {
   destLat?: number | null;
   destLng?: number | null;
   finalPrice: string | null;
+  cashbackApplied?: number;
   status: string;
   rideType: "TRANSPORT" | "DELIVERY";
   client: { fullName: string; phone: string };
@@ -245,9 +246,22 @@ export default function OngoingRidePage() {
               </div>
               {ride.finalPrice && (
                 <div style={{ borderTop: "1px solid var(--border)", marginTop: "14px", paddingTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>Tarifa acordada</span>
+                  <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{ride.cashbackApplied ? "Valor acordado" : "Tarifa acordada"}</span>
                   <span className="price-tag-primary">{formatCOP(Number(ride.finalPrice))}</span>
                 </div>
+              )}
+
+              {ride.finalPrice && !!ride.cashbackApplied && ride.cashbackApplied > 0 && (
+                <>
+                  <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>Cashback del cliente</span>
+                    <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--danger)" }}>-{formatCOP(ride.cashbackApplied)}</span>
+                  </div>
+                  <div style={{ marginTop: "8px", borderTop: "1px solid var(--border)", paddingTop: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 600 }}>Total a cobrar en efectivo</span>
+                    <span className="price-tag-accent">{formatCOP(Number(ride.finalPrice) - ride.cashbackApplied)}</span>
+                  </div>
+                </>
               )}
             </div>
 

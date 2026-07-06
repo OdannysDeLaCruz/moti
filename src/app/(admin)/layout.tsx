@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Bike, IdCard, Users, Wallet, Settings, Menu } from "lucide-react";
+import { LayoutDashboard, Bike, IdCard, Users, Wallet, PiggyBank, Settings, Menu } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 
@@ -13,6 +13,7 @@ const ADMIN_NAV_ITEMS = [
   { href: "/admin/drivers", label: "Conductores", icon: IdCard },
   { href: "/admin/clients", label: "Clientes", icon: Users },
   { href: "/admin/commissions", label: "Comisiones", icon: Wallet },
+  { href: "/admin/cashback", label: "Cashback", icon: PiggyBank },
   { href: "/admin/config", label: "Configuración", icon: Settings },
 ];
 
@@ -22,6 +23,7 @@ const SECTION_TITLES: Array<[string, string]> = [
   ["/admin/drivers", "Conductores"],
   ["/admin/clients", "Clientes"],
   ["/admin/commissions", "Comisiones"],
+  ["/admin/cashback", "Cashback"],
   ["/admin/config", "Configuración"],
   ["/admin/verify", "Verificar Conductores"],
 ];

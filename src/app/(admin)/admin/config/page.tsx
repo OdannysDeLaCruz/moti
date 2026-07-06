@@ -10,11 +10,20 @@ interface Config {
   maxFreeRides: number;
   commissionRate: number;
   passDurationDays: number;
+  cashbackAmount: number;
+  cashbackMinRides: number;
 }
 
 export default function AdminConfigPage() {
   const [config, setConfig] = useState<Config | null>(null);
-  const [form, setForm] = useState({ minRidePrice: "", maxFreeRides: "", commissionRate: "", passDurationDays: "" });
+  const [form, setForm] = useState({
+    minRidePrice: "",
+    maxFreeRides: "",
+    commissionRate: "",
+    passDurationDays: "",
+    cashbackAmount: "",
+    cashbackMinRides: "",
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -28,6 +37,8 @@ export default function AdminConfigPage() {
           maxFreeRides: String(data.maxFreeRides),
           commissionRate: String(data.commissionRate),
           passDurationDays: String(data.passDurationDays),
+          cashbackAmount: String(data.cashbackAmount),
+          cashbackMinRides: String(data.cashbackMinRides),
         });
       })
       .catch(() => {})
@@ -45,6 +56,8 @@ export default function AdminConfigPage() {
         maxFreeRides: Number(form.maxFreeRides),
         commissionRate: Number(form.commissionRate),
         passDurationDays: Number(form.passDurationDays),
+        cashbackAmount: Number(form.cashbackAmount),
+        cashbackMinRides: Number(form.cashbackMinRides),
       });
       setConfig(data);
       setMessage("Configuración guardada correctamente.");
@@ -84,6 +97,14 @@ export default function AdminConfigPage() {
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span className="text-muted text-sm">Duración del pase</span>
                     <span className="font-semibold">{config.passDurationDays} día(s)</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span className="text-muted text-sm">Cashback por carrera</span>
+                    <span className="font-semibold">{formatCOP(config.cashbackAmount)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span className="text-muted text-sm">Carreras mínimas para cashback</span>
+                    <span className="font-semibold">{config.cashbackMinRides}</span>
                   </div>
                 </div>
               </div>
@@ -139,7 +160,7 @@ export default function AdminConfigPage() {
                 />
               </div>
 
-              <div className="form-group" style={{ marginBottom: "24px" }}>
+              <div className="form-group">
                 <label htmlFor="passDurationDays">Duración del pase (días)</label>
                 <input
                   id="passDurationDays"
@@ -148,6 +169,32 @@ export default function AdminConfigPage() {
                   step={1}
                   value={form.passDurationDays}
                   onChange={(e) => setForm((p) => ({ ...p, passDurationDays: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="cashbackAmount">Monto de cashback por carrera (COP)</label>
+                <input
+                  id="cashbackAmount"
+                  type="number"
+                  min={0}
+                  step={100}
+                  value={form.cashbackAmount}
+                  onChange={(e) => setForm((p) => ({ ...p, cashbackAmount: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: "24px" }}>
+                <label htmlFor="cashbackMinRides">Carreras mínimas para empezar a ganar cashback</label>
+                <input
+                  id="cashbackMinRides"
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={form.cashbackMinRides}
+                  onChange={(e) => setForm((p) => ({ ...p, cashbackMinRides: e.target.value }))}
                   required
                 />
               </div>

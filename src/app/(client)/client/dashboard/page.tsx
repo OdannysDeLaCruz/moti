@@ -50,6 +50,9 @@ export default function ClientDashboardPage() {
   const [note, setNote] = useState("");
   const [noteModal, setNoteModal] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
+  const [cashbackBalance, setCashbackBalance] = useState(0);
+  const [cashbackToApply, setCashbackToApply] = useState(0);
+  const [useCashback, setUseCashback] = useState(false);
   // Bottom sheet drag-to-snap: false = collapsed (pills only), true = expanded (full form)
   const [sheetExpanded, setSheetExpanded] = useState(true);
   const dragStartY = useRef(0);
@@ -85,8 +88,18 @@ export default function ClientDashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    api.get<{ balance: number }>("/api/cashback/me")
+      .then(({ data }) => setCashbackBalance(data.balance))
+      .catch(() => {});
+  }, []);
+
   function adjustPrice(delta: number) {
-    setPrice((p) => Math.max(MIN_PRICE, p + delta));
+    setPrice((p) => {
+      const next = Math.max(MIN_PRICE, p + delta);
+      setCashbackToApply((c) => Math.min(c, next, cashbackBalance));
+      return next;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -104,6 +117,7 @@ export default function ClientDashboardPage() {
         initialPrice: price,
         rideType,
         notes: note.trim() || undefined,
+        ...(useCashback && cashbackToApply > 0 ? { cashbackToApply } : {}),
       });
       router.push(`/client/negotiation/${data.id}`);
     } catch (err: unknown) {
@@ -487,6 +501,57 @@ export default function ClientDashboardPage() {
                         }}>+</button>
                     </div>
                   </div>
+
+                  {/* Cashback */}
+                  {cashbackBalance > 0 && (
+                    <div className="card-ghost" style={{ padding: "12px 14px", marginBottom: "12px" }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = !useCashback;
+                          setUseCashback(next);
+                          if (next) setCashbackToApply(Math.min(cashbackBalance, price));
+                          else setCashbackToApply(0);
+                        }}
+                        style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          width: "100%", background: "none", border: "none", cursor: "pointer",
+                          fontFamily: "inherit", padding: 0,
+                        }}
+                      >
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>
+                          Usar cashback (saldo: {formatCOP(cashbackBalance)})
+                        </span>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--primary)" }}>
+                          {useCashback ? "Quitar" : "Aplicar"}
+                        </span>
+                      </button>
+
+                      {useCashback && (
+                        <div className="animate-slide-down" style={{ marginTop: "10px" }}>
+                          <input
+                            type="number"
+                            min={0}
+                            max={Math.min(cashbackBalance, price)}
+                            step={100}
+                            value={cashbackToApply}
+                            onChange={(e) => {
+                              const max = Math.min(cashbackBalance, price);
+                              const val = Math.max(0, Math.min(Number(e.target.value) || 0, max));
+                              setCashbackToApply(val);
+                            }}
+                          />
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginTop: "8px" }}>
+                            <span className="text-muted">Total a pagar en efectivo (aprox.)</span>
+                            <span className="font-semibold">{formatCOP(Math.max(0, price - cashbackToApply))}</span>
+                          </div>
+                          <p className="text-xs text-muted" style={{ marginTop: "6px" }}>
+                            Se aplicará cuando un conductor acepte tu carrera.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Note */}
                   <button type="button"
