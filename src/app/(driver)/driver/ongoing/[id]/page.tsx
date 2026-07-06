@@ -13,7 +13,7 @@ import { playStatusNegative } from "@/lib/sounds";
 import { useRideSocket } from "@/hooks/useRideSocket";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { MapPin, Navigation, Flag, FileText, Radio } from "lucide-react";
+import { MapPin, Navigation, Flag, FileText, Radio, ChevronLeft } from "lucide-react";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -197,7 +197,7 @@ export default function OngoingRidePage() {
       }}>
         <button onClick={() => router.push("/driver/dashboard")}
           style={{ pointerEvents: "auto", background: "var(--surface)", border: "none", cursor: "pointer", borderRadius: "50%", width: 38, height: 38, fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
-          ←
+          <ChevronLeft />
         </button>
         <span style={{ pointerEvents: "none", flex: 1, fontWeight: 700, fontSize: "16px", color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>
           {ride.rideType === "DELIVERY" ? "Domicilio en curso" : "Carrera en curso"}
