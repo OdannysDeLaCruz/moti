@@ -20,5 +20,5 @@ export function formatCOP(amount: number | bigint): string {
     maximumFractionDigits: 0,
   }).format(Number(amount));
 
-  return formatted + ' pesos';
+  return 'COL' + formatted;
 }

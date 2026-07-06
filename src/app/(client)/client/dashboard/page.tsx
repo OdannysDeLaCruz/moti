@@ -19,8 +19,8 @@ const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 const PRICE_STEP = 500;
 const MIN_PRICE = 4000;
 const RIDE_TYPES = [
-  { value: "TRANSPORT", label: "Carrera", desc: "Transporte de persona" },
-  { value: "DELIVERY", label: "Entrega", desc: "Envío de paquete" },
+  { value: "TRANSPORT", label: "Transporte", desc: "Transporte de persona" },
+  { value: "DELIVERY", label: "Envíos", desc: "Domicilio de paquetes" },
 ] as const;
 type RideType = "TRANSPORT" | "DELIVERY";
 const ACTIVE_STATUSES = ["PENDING", "NEGOTIATING", "ACCEPTED", "IN_PROGRESS"];
@@ -520,10 +520,10 @@ export default function ClientDashboardPage() {
                         }}
                       >
                         <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>
-                          Usar cashback (saldo: {formatCOP(cashbackBalance)})
+                          Tienes un saldo de <span style={{ color: "var(--success)" }}>{formatCOP(cashbackBalance)}</span>
                         </span>
                         <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--primary)" }}>
-                          {useCashback ? "Quitar" : "Aplicar"}
+                          {useCashback ? "Quitar" : "Usarlos"}
                         </span>
                       </button>
 
