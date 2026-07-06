@@ -310,7 +310,7 @@ export default function NegotiationPage() {
       </div>
 
       {/* Bottom sheet */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 300, display: "flex", justifyContent: "center" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 300, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
         <div style={{
           width: "100%", maxWidth: 480,
           background: "var(--surface)",
@@ -318,6 +318,7 @@ export default function NegotiationPage() {
           boxShadow: "0 -4px 32px rgba(0,0,0,0.18)",
           transform: sheetExpanded ? "translateY(0)" : "translateY(calc(100% - 160px))",
           transition: "transform 0.3s ease",
+          pointerEvents: "auto",
         }}>
           {/* Drag handle */}
           <div

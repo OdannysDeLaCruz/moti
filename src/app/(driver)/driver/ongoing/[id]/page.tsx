@@ -207,7 +207,7 @@ export default function OngoingRidePage() {
       </div>
 
       {/* Bottom sheet */}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 300, display: "flex", justifyContent: "center" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 300, display: "flex", justifyContent: "center", pointerEvents: "none" }}>
         <div style={{
           width: "100%", maxWidth: 480,
           background: "var(--surface)", borderRadius: "var(--r-xl) var(--r-xl) 0 0",
@@ -215,6 +215,7 @@ export default function OngoingRidePage() {
           transform: sheetExpanded ? "translateY(0)" : "translateY(calc(100% - 160px))",
           transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
           maxHeight: "85vh", overflowY: sheetExpanded ? "auto" : "hidden",
+          pointerEvents: "auto",
         }}>
           {/* Drag handle */}
           <div
