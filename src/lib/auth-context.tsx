@@ -24,6 +24,8 @@ export interface AuthUser {
   } | null;
   passActive?: boolean;
   maxFreeRides?: number;
+  commissionOwed?: number;
+  unpaidRideCount?: number;
 }
 
 interface AuthContextValue {
@@ -70,8 +72,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     });
     setAccessToken(data.accessToken);
-    setUser(data.user);
-  }, []);
+    // El user que devuelve /auth/login es el registro crudo (sin maxFreeRides/passActive/commissionOwed,
+    // que solo calcula /api/users/me) — se pide de nuevo para tener el objeto completo desde el login.
+    await refreshUser();
+  }, [refreshUser]);
 
   const register = useCallback(
     async (form: {
@@ -85,15 +89,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { phone, ...rest } = form;
       const phoneWithoutCountryCode = phone.replace('+', '');
       console.log(phoneWithoutCountryCode);
-      const { data } = await api.post<{ user: AuthUser; accessToken: string }>('/auth/register', 
+      const { data } = await api.post<{ user: AuthUser; accessToken: string }>('/auth/register',
         {
           ...rest,
           phone: phoneWithoutCountryCode
         });
       setAccessToken(data.accessToken);
-      setUser(data.user);
+      await refreshUser();
     },
-    [],
+    [refreshUser],
   );
 
   const logout = useCallback(async () => {

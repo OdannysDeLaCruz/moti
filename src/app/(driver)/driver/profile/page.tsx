@@ -8,6 +8,8 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 import Image from "next/image";
 import { MapPin, Mail, Phone, Car, LogOut, Gift, User } from "lucide-react";
+import { formatCOP } from "@/lib/whatsapp";
+import AccessRequiredAlert from "@/components/driver/AccessRequiredAlert";
 
 // const FREE_RIDES_TOTAL = 2;
 
@@ -21,7 +23,7 @@ export default function DriverProfilePage() {
   const { user, loading } = useAuthGuard("DRIVER");
   const { logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
-  const FREE_RIDES_TOTAL = user?.maxFreeRides || 2;
+  const FREE_RIDES_TOTAL = user?.maxFreeRides ?? 2;
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -79,56 +81,75 @@ export default function DriverProfilePage() {
             </div>
 
             {/* Viajes y plan */}
-            <div className="card" style={{ padding: "16px" }}>
-              <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "12px" }}>
-                Tus viajes
-              </p>
-
-              <div style={{ marginBottom: "10px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "28px", fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>
-                    {ridesUsed}
-                  </span>
-                  <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                    de {FREE_RIDES_TOTAL} gratuitos usados
-                  </span>
-                </div>
-                <div style={{ height: "6px", background: "var(--surface-3)", borderRadius: "var(--r-full)", overflow: "hidden" }}>
+            {freeUsedUp && passActive && profile?.passExpiresAt ? (
+              // Caso especial: ya no tiene viajes gratis pero SÍ tiene pase activo —
+              // el pase es la información relevante aquí, los viajes gratuitos usados pasan a un segundo plano.
+              <div className="card" style={{ padding: "16px" }}>
+                <div style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  background: "var(--success-pale)", borderRadius: "var(--r-sm)",
+                  padding: "14px", marginBottom: "14px"
+                }}>
                   <div style={{
-                    height: "100%",
-                    width: `${Math.min(100, (ridesUsed / FREE_RIDES_TOTAL) * 100)}%`,
-                    background: freeUsedUp ? "var(--danger)" : "var(--primary)",
-                    borderRadius: "var(--r-full)",
-                    transition: "width 0.4s ease"
-                  }} />
-                </div>
-              </div>
-
-              {freeUsedUp ? (
-                passActive && profile?.passExpiresAt ? (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    background: "var(--success-pale)", borderRadius: "var(--r-sm)",
-                    padding: "8px 12px", fontSize: "13px", color: "var(--success)"
+                    width: 42, height: 42, borderRadius: "50%", background: "var(--success)",
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                   }}>
-                    <MapPin size={14} />
-                    <span>
-                      Pase activo hasta las{" "}
+                    <MapPin size={20} color="#fff" />
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 800, fontSize: "16px", color: "var(--success)" }}>Pase activo</p>
+                    <p style={{ fontSize: "13px", color: "var(--text)" }}>
+                      Hasta el{" "}
                       <strong>
-                        {new Date(profile.passExpiresAt).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(profile.passExpiresAt).toLocaleString("es-CO", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </strong>
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.6, marginBottom: user?.commissionOwed ? "6px" : 0 }}>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Viajes gratuitos usados</span>
+                  <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{ridesUsed} de {FREE_RIDES_TOTAL}</span>
+                </div>
+                {!!user?.commissionOwed && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", opacity: 0.6 }}>
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>Comisión pendiente</span>
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{formatCOP(user.commissionOwed)}</span>
+                  </div>
+                )}
+              </div>
+            ) : freeUsedUp ? (
+              <AccessRequiredAlert
+                commissionOwed={user?.commissionOwed}
+                unpaidRideCount={user?.unpaidRideCount}
+                userId={user?.id}
+              />
+            ) : (
+              <div className="card" style={{ padding: "16px" }}>
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "12px" }}>
+                  Tus viajes
+                </p>
+
+                <div style={{ marginBottom: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "6px" }}>
+                    <span style={{ fontSize: "28px", fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>
+                      {ridesUsed}
+                    </span>
+                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+                      de {FREE_RIDES_TOTAL} gratuitos usados
                     </span>
                   </div>
-                ) : (
-                  <div style={{
-                    background: "var(--warning-pale)", borderRadius: "var(--r-sm)",
-                    padding: "10px 12px", fontSize: "13px", color: "var(--warning)"
-                  }}>
-                    <p style={{ fontWeight: 700, marginBottom: "2px" }}>Ya usaste tus {FREE_RIDES_TOTAL} viajes gratuitos</p>
-                    <p style={{ color: "var(--text-muted)" }}>Debes pagar la cuota diaria para seguir recibiendo carreras.</p>
+                  <div style={{ height: "6px", background: "var(--surface-3)", borderRadius: "var(--r-full)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${Math.min(100, (ridesUsed / FREE_RIDES_TOTAL) * 100)}%`,
+                      background: "var(--primary)",
+                      borderRadius: "var(--r-full)",
+                      transition: "width 0.4s ease"
+                    }} />
                   </div>
-                )
-              ) : (
+                </div>
+
                 <div style={{
                   display: "flex", alignItems: "flex-start", gap: "10px",
                   background: "var(--primary-xpale)", borderRadius: "var(--r-sm)",
@@ -140,12 +161,12 @@ export default function DriverProfilePage() {
                       Te quedan <strong>{ridesLeft}</strong> {ridesLeft === 1 ? "viaje gratuito" : "viajes gratuitos"}
                     </p>
                     <p style={{ color: "var(--text-muted)" }}>
-                      Al completar {FREE_RIDES_TOTAL} viajes gratuitos, se activa una cuota diaria para continuar operando.
+                      Al completar tus viajes gratuitos, se cobrará una comisión por cada carrera para continuar operando.
                     </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Contacto */}
             <div className="card" style={{ padding: "16px" }}>

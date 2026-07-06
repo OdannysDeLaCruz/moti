@@ -6,6 +6,7 @@ import BottomNav from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
 import RideDetailModal from "@/components/RideDetailModal";
+import AccessRequiredAlert from "@/components/driver/AccessRequiredAlert";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
@@ -202,9 +203,9 @@ export default function DriverDashboardPage() {
   const isRejected = profile?.status === "REJECTED";
   const isApproved = profile?.status === "APPROVED";
   const passActive = profile?.passExpiresAt && new Date(profile.passExpiresAt) > new Date();
-  const hasAccess = isApproved && (passActive || (profile && profile.freeRidesUsed < 5));
+  const hasAccess = isApproved && (passActive || (profile && profile.freeRidesUsed < (user?.maxFreeRides ?? 5)));
 
-  const activeRide = rides.find((r) => ["ACCEPTED", "IN_PROGRESS"].includes(r.status));
+  const activeRide = rides.find((r) => ["ACCEPTED", "HEADING_TO_PICKUP", "AT_PICKUP", "IN_PROGRESS"].includes(r.status));
   const pendingRides = rides.filter((r) => r.status === "PENDING" || r.status === "NEGOTIATING");
   const selectedRide = rides.find((r) => r.id === selectedRideId) ?? null;
 
@@ -323,20 +324,11 @@ export default function DriverDashboardPage() {
         )}
 
         {isApproved && !hasAccess && (
-          <div className="card mb-4" style={{ background: "var(--warning-pale)", border: "1.5px solid rgba(217,119,6,0.2)" }}>
-            <p className="font-semibold mb-2" style={{ color: "var(--warning)" }}>Pase requerido</p>
-            <p className="text-sm text-muted mb-3">
-              Usaste tus {profile?.freeRidesUsed} viajes gratuitos. Activa tu pase diario para continuar.
-            </p>
-            <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_ADMIN_WHATSAPP ?? "573000000000"}?text=${encodeURIComponent(`Hola! Quiero activar mi pase. Mi correo: ${user?.email}`)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-accent btn-sm"
-            >
-              Pagar pase por WhatsApp
-            </a>
-          </div>
+          <AccessRequiredAlert
+            commissionOwed={user?.commissionOwed}
+            unpaidRideCount={user?.unpaidRideCount}
+            userId={user?.id}
+          />
         )}
 
         {/* Carrera en curso */}
