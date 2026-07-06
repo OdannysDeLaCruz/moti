@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
         port: '',
-        pathname: '/duoknfsuz/**', // O un path más genérico si usas rutas dinámicas
+        pathname: '/duoknfsuz/**',
       },
     ],
   },
