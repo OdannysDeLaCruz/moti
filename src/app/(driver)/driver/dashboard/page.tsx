@@ -13,7 +13,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Toast } from "@/components/ui/Toast";
 import { useDriverFeed, NewRideEvent } from "@/hooks/useDriverFeed";
 import { playNewRequest, playStatusNegative } from "@/lib/sounds";
-import { Bike, ArrowRight, XIcon } from "lucide-react";
+import { Bike, XIcon } from "lucide-react";
 import { AxiosError } from "axios";
 import Image from "next/image";
 
@@ -363,7 +363,7 @@ export default function DriverDashboardPage() {
         {isApproved && hasAccess && !activeRide && (
           <>
             <h3 style={{ fontSize: "15px", fontWeight: 700, marginBottom: "12px" }}>
-              Solicitudes disponibles ({pendingRides.length})
+              Solicitudes de viajes ({pendingRides.length})
             </h3>
 
             {pendingRides.length === 0 ? (
@@ -372,9 +372,15 @@ export default function DriverDashboardPage() {
                 <p className="text-sm">Aparecerán aquí cuando los clientes soliciten.</p>
               </div>
             ) : (
-              <div className="stagger" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div className="stagger" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {pendingRides.map((ride) => {
-                  const alreadyOffered = ride.offers.some((o) => o.driverId === user?.id && o.status === RideOfferStatus.PENDING);
+                  const myOffer = ride.offers.find((o) => o.driverId === user?.id && o.status === RideOfferStatus.PENDING);
+                  const initials = ride.client.fullName
+                    .split(" ")
+                    .slice(0, 2)
+                    .map((w) => w[0])
+                    .join("")
+                    .toUpperCase();
 
                   return (
                     <div
@@ -388,32 +394,114 @@ export default function DriverDashboardPage() {
                       }}
                       onClick={() => openModal(ride.id)}
                     >
-                      <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 2 }}>
-                            {ride.rideType === "DELIVERY" ? "Domicilio" : "Carrera"}
+                      <div style={{ display: "flex", gap: "14px" }}>
+                        {/* Left — avatar + client name */}
+                        <div style={{ flex: "0 0 60px", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px" }}>
+                          <div
+                            style={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: "50%",
+                              background: "var(--bg)",
+                              border: "2px solid var(--primary-light)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: initials ? 16 : 20,
+                              fontWeight: 700,
+                              color: "var(--primary)",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {initials || "👤"}
                           </div>
-                          <div style={{ fontSize: "14px", fontWeight: 600 }}>{ride.originAddress}</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "13px", color: "var(--text-muted)" }}>
-                            <ArrowRight size={12} />{ride.destAddress}
+                          <div
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: "var(--text-muted)",
+                              textAlign: "center",
+                              lineHeight: 1.25,
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {ride.client.fullName}
                           </div>
                         </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ fontSize: "18px", fontWeight: 800, color: "var(--accent-dark)" }}>
-                            {formatCOP(Number(ride.initialPrice))}
+
+                        {/* Right — type, price and route */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                            <span
+                              className={`badge ${ride.rideType === "DELIVERY" ? "badge-accent" : "badge-active"}`}
+                              style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
+                            >
+                              <Bike size={12} />
+                              {ride.rideType === "DELIVERY" ? "Envío" : "Transporte"}
+                            </span>
+                            <div style={{ fontSize: "17px", fontWeight: 800, color: "var(--accent-dark)", whiteSpace: "nowrap" }}>
+                              {formatCOP(Number(ride.initialPrice))}
+                            </div>
+                          </div>
+
+                          {/* Route — A and B connected by vertical line */}
+                          <div>
+                            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                                <div
+                                  style={{
+                                    width: 18,
+                                    height: 18,
+                                    borderRadius: "50%",
+                                    background: "var(--primary)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#fff",
+                                    fontSize: 9,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  A
+                                </div>
+                                <div style={{ width: 2, flex: 1, minHeight: 16, background: "var(--border-strong)", borderRadius: 1, margin: "3px 0" }} />
+                              </div>
+                              <div style={{ paddingBottom: 8, minWidth: 0, fontSize: "13px", fontWeight: 600, color: "var(--text)", lineHeight: 1.35 }}>
+                                {ride.originAddress}
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                              <div style={{ flexShrink: 0, width: 18, display: "flex", justifyContent: "center" }}>
+                                <div
+                                  style={{
+                                    width: 18,
+                                    height: 18,
+                                    borderRadius: "50%",
+                                    background: "var(--accent-dark)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#fff",
+                                    fontSize: 9,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  B
+                                </div>
+                              </div>
+                              <div style={{ minWidth: 0, fontSize: "13px", fontWeight: 600, color: "var(--text)", lineHeight: 1.35 }}>
+                                {ride.destAddress}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ borderTop: "1px solid var(--border)", paddingTop: "10px", display: "flex", justifyContent: "flex-end" }}>
-                        {alreadyOffered ? (
-                          <span className="badge badge-active">Oferta enviada ✓</span>
-                        ) : (
-                          <span
-                            className="badge badge-neutral"
-                            style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600 }}
-                          >
-                            Ver solicitud →
+                      <div style={{ borderTop: "1px solid var(--border)", marginTop: "14px", paddingTop: "10px", display: "flex", justifyContent: "flex-end" }}>
+                        {myOffer && (
+                          <span className="badge badge-active">
+                            Ofertaste {formatCOP(myOffer.counterPrice)}
                           </span>
                         )}
                       </div>

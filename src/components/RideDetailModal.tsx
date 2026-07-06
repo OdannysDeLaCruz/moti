@@ -67,7 +67,7 @@ export default function RideDetailModal({
     }
   }
 
-  const alreadyOffered = ride.offers.some((o) => o.driverId === currentUserId && o.status === RideOfferStatus.PENDING);
+  const myOffer = ride.offers.find((o) => o.driverId === currentUserId && o.status === RideOfferStatus.PENDING);
   const initialPrice = Number(ride.initialPrice);
 
   const base = Math.ceil(initialPrice / 1000) * 1000;
@@ -267,10 +267,13 @@ export default function RideDetailModal({
 
         {/* Actions */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-          {alreadyOffered ? (
+          {myOffer ? (
             <div style={{ textAlign: "center", padding: "16px 0" }}>
-              <div className="badge badge-active" style={{ fontSize: 14, padding: "8px 20px" }}>
-                Oferta enviada ✓
+              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                Ofreciste
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "var(--primary)", lineHeight: 1 }}>
+                {formatCOP(myOffer.counterPrice)}
               </div>
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 12 }}>
                 Espera la respuesta del cliente.
