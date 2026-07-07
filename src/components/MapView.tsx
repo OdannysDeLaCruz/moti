@@ -27,11 +27,63 @@ interface MapViewProps {
 
 const PIN_HEX = { green: "#22c55e", red: "#ef4444", blue: "#2563eb" };
 
-function createMarkerElement(pin: MapPin) {
+// Below this deviation from the drawn route, GPS jitter is ignored — only an
+// actual detour off the road triggers a new Directions API call.
+const REROUTE_THRESHOLD_METERS = 70;
+const EARTH_RADIUS_M = 6371000;
+
+function toLocalXY(lng: number, lat: number, refLat: number): [number, number] {
+  const x = lng * Math.cos((refLat * Math.PI) / 180) * (Math.PI / 180) * EARTH_RADIUS_M;
+  const y = lat * (Math.PI / 180) * EARTH_RADIUS_M;
+  return [x, y];
+}
+
+function distancePointToSegmentMeters(
+  point: [number, number], // [lng, lat]
+  a: [number, number],
+  b: [number, number]
+): number {
+  const refLat = point[1];
+  const [px, py] = toLocalXY(point[0], point[1], refLat);
+  const [ax, ay] = toLocalXY(a[0], a[1], refLat);
+  const [bx, by] = toLocalXY(b[0], b[1], refLat);
+
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  const t = lenSq === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  const cx = ax + t * dx;
+  const cy = ay + t * dy;
+  return Math.hypot(px - cx, py - cy);
+}
+
+function distanceToRouteMeters(point: [number, number], coords: [number, number][]): number {
+  let min = Infinity;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const d = distancePointToSegmentMeters(point, coords[i], coords[i + 1]);
+    if (d < min) min = d;
+  }
+  return min;
+}
+
+// Distancia mínima (en grados de longitud) para considerar que hubo un
+// movimiento real y no ruido de GPS. ~3m en el ecuador.
+const MOTO_DIRECTION_EPSILON = 0.00003;
+
+// La imagen debe venir en vista lateral, mirando hacia la izquierda por
+// defecto, para que el flip (scaleX) la oriente hacia la derecha cuando
+// corresponda.
+const MOTO_ICON_SRC = "/pin-top-lateral-50x40.png";
+
+function createMarkerElement(pin: MapPin, flip = false) {
   const el = document.createElement("div");
   if (pin.icon === "moto") {
-    el.style.cssText = "font-size:26px;line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));cursor:pointer";
-    el.innerText = "🏍️";
+    el.style.cssText = `width:50px;height:50px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));cursor:pointer;${flip ? "transform:scaleX(-1);" : ""}`;
+    const img = document.createElement("img");
+    img.src = MOTO_ICON_SRC;
+    img.alt = "";
+    img.style.cssText = "width:100%;height:100%;object-fit:contain;";
+    el.appendChild(img);
   } else {
     const hex = PIN_HEX[pin.color ?? "blue"];
     el.style.cssText = `width:22px;height:22px;background:${hex};border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer`;
@@ -65,6 +117,10 @@ export default function MapView({
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const prevRouteKeyRef = useRef("");
+  const prevEndKeyRef = useRef("");
+  const routeCoordsRef = useRef<[number, number][] | null>(null);
+  const prevMotoLngRef = useRef<number | null>(null);
+  const motoFacingRightRef = useRef(false);
   const readyRef = useRef(false);
 
   const h = typeof height === "number" ? `${height}px` : height;
@@ -104,6 +160,10 @@ export default function MapView({
     return () => {
       readyRef.current = false;
       prevRouteKeyRef.current = "";
+      prevEndKeyRef.current = "";
+      routeCoordsRef.current = null;
+      prevMotoLngRef.current = null;
+      motoFacingRightRef.current = false;
       map.remove();
       mapRef.current = null;
     };
@@ -126,8 +186,22 @@ export default function MapView({
     if (!map) return;
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
+
+    const moto = pins.find((p) => p.icon === "moto");
+    if (moto) {
+      const prevLng = prevMotoLngRef.current;
+      if (prevLng !== null) {
+        const delta = moto.lng - prevLng;
+        if (delta > MOTO_DIRECTION_EPSILON) motoFacingRightRef.current = true;
+        else if (delta < -MOTO_DIRECTION_EPSILON) motoFacingRightRef.current = false;
+        // |delta| <= epsilon -> ruido de GPS, se mantiene la dirección previa
+      }
+      prevMotoLngRef.current = moto.lng;
+    }
+
     pins.forEach((pin) => {
-      const el = createMarkerElement(pin);
+      const flip = pin.icon === "moto" && motoFacingRightRef.current;
+      const el = createMarkerElement(pin, flip);
       const marker = new mapboxgl.Marker({ element: el }).setLngLat([pin.lng, pin.lat]);
       if (pin.label) marker.setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`<div style="font-weight:600;font-size:12px;padding:2px 4px">${pin.label}</div>`));
       marker.addTo(map);
@@ -152,13 +226,28 @@ export default function MapView({
         (map.getSource("route") as mapboxgl.GeoJSONSource)?.setData({ type: "FeatureCollection", features: [] });
       });
       prevRouteKeyRef.current = "";
+      prevEndKeyRef.current = "";
+      routeCoordsRef.current = null;
     };
 
     if (!start || !end) { clearRoute(); return; }
 
     const key = `${start.lat},${start.lng};${end.lat},${end.lng}`;
     if (prevRouteKeyRef.current === key) return;
+
+    // Same destination as before + still close to the route already drawn ->
+    // this is just GPS jitter, not a real detour. Skip the API call.
+    const endKey = `${end.lat},${end.lng}`;
+    if (prevEndKeyRef.current === endKey && routeCoordsRef.current) {
+      const deviation = distanceToRouteMeters([start.lng, start.lat], routeCoordsRef.current);
+      if (deviation < REROUTE_THRESHOLD_METERS) {
+        prevRouteKeyRef.current = key;
+        return;
+      }
+    }
+
     prevRouteKeyRef.current = key;
+    prevEndKeyRef.current = endKey;
 
     const token = mapboxgl.accessToken;
     if (!token) return;
@@ -170,6 +259,7 @@ export default function MapView({
       .then((data) => {
         if (!data.routes?.length) return;
         const geom = data.routes[0].geometry;
+        routeCoordsRef.current = geom.coordinates;
         whenReady(map, () => {
           (map.getSource("route") as mapboxgl.GeoJSONSource)?.setData({
             type: "Feature", properties: {}, geometry: geom,
