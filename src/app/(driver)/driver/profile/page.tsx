@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/ui/BottomNav";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { Toast } from "@/components/ui/Toast";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Image from "next/image";
-import { MapPin, Mail, Phone, Car, LogOut, Gift, User } from "lucide-react";
+import { MapPin, Mail, Phone, Car, LogOut, Gift, User, Bell } from "lucide-react";
 import { formatCOP } from "@/lib/whatsapp";
 import AccessRequiredAlert from "@/components/driver/AccessRequiredAlert";
 
@@ -24,11 +26,29 @@ export default function DriverProfilePage() {
   const { logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const FREE_RIDES_TOTAL = user?.maxFreeRides ?? 2;
+  const { supported: pushSupported, subscribed: pushSubscribed, subscribe, unsubscribe } = usePushNotifications();
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushErrorToast, setPushErrorToast] = useState(false);
 
   async function handleSignOut() {
     setSigningOut(true);
     await logout();
     router.push("/login");
+  }
+
+  async function handleTogglePush() {
+    setPushBusy(true);
+    try {
+      if (pushSubscribed) {
+        await unsubscribe();
+      } else {
+        await subscribe();
+      }
+    } catch {
+      setPushErrorToast(true);
+    } finally {
+      setPushBusy(false);
+    }
   }
 
   const profile = user?.driverProfile;
@@ -40,6 +60,16 @@ export default function DriverProfilePage() {
 
   return (
     <div className="page">
+      {pushErrorToast && (
+        <Toast
+          type="error"
+          icon="x"
+          message="No se pudieron activar las notificaciones"
+          subMessage="Revisa tu conexión o el antivirus/firewall e intenta de nuevo"
+          onDismiss={() => setPushErrorToast(false)}
+        />
+      )}
+
       <div className="screen-header">
         <span style={{ flex: 1, fontWeight: 700, fontSize: "17px" }}>Mi perfil</span>
       </div>
@@ -177,6 +207,39 @@ export default function DriverProfilePage() {
                 <Row icon={<Mail size={14} />} label="Correo" value={user.email} />
                 <div style={{ borderTop: "1px solid var(--border)" }} />
                 <Row icon={<Phone size={14} />} label="Teléfono" value={user.phone} />
+              </div>
+            </div>
+
+            {/* Notificaciones push */}
+            <div className="card" style={{ padding: "16px" }}>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "12px" }}>
+                Notificaciones
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%",
+                  background: "var(--primary-pale)", display: "flex",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <Bell size={16} color="var(--primary-dark)" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p className="font-semibold text-sm">Notificaciones push</p>
+                  <p className="text-muted text-xs">
+                    {!pushSupported
+                      ? "No disponibles en este navegador"
+                      : pushSubscribed
+                        ? "Activadas"
+                        : "Desactivadas"}
+                  </p>
+                </div>
+                <button
+                  className={pushSubscribed ? "btn btn-ghost btn-sm" : "btn btn-primary btn-sm"}
+                  disabled={!pushSupported || pushBusy}
+                  onClick={handleTogglePush}
+                >
+                  {pushBusy ? <span className="spinner spinner-sm" /> : pushSubscribed ? "Desactivar" : "Activar"}
+                </button>
               </div>
             </div>
 

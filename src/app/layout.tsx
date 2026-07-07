@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import MapboxAbortSuppressor from "@/components/MapboxAbortSuppressor";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 
 export const metadata: Metadata = {
   title: "Motu – Carreras y domicilios en tiempo real",
@@ -61,7 +62,10 @@ export default function RootLayout({
       <body>
         <MapboxAbortSuppressor />
         <ServiceWorkerRegister />
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <PushPermissionPrompt />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

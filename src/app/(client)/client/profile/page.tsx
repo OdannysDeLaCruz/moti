@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
+import { Toast } from "@/components/ui/Toast";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { formatCOP } from "@/lib/whatsapp";
 import api from "@/lib/api-client";
-import { User, Wallet, ChevronRight } from "lucide-react";
+import { User, Wallet, ChevronRight, Bell } from "lucide-react";
 
 interface UserData {
   fullName: string;
@@ -30,6 +32,9 @@ export default function ClientProfilePage() {
   const { logout } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const [cashbackBalance, setCashbackBalance] = useState<number | null>(null);
+  const { supported: pushSupported, subscribed: pushSubscribed, subscribe, unsubscribe } = usePushNotifications();
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushErrorToast, setPushErrorToast] = useState(false);
 
   useEffect(() => {
     api.get<{ balance: number }>("/api/cashback/me")
@@ -43,8 +48,33 @@ export default function ClientProfilePage() {
     router.push("/login");
   }
 
+  async function handleTogglePush() {
+    setPushBusy(true);
+    try {
+      if (pushSubscribed) {
+        await unsubscribe();
+      } else {
+        await subscribe();
+      }
+    } catch {
+      setPushErrorToast(true);
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
   return (
     <div className="page">
+      {pushErrorToast && (
+        <Toast
+          type="error"
+          icon="x"
+          message="No se pudieron activar las notificaciones"
+          subMessage="Revisa tu conexión o el antivirus/firewall e intenta de nuevo"
+          onDismiss={() => setPushErrorToast(false)}
+        />
+      )}
+
       <div className="screen-header">
         <span style={{ flex: 1, fontWeight: 700, fontSize: "17px" }}>Mi perfil</span>
       </div>
@@ -120,6 +150,37 @@ export default function ClientProfilePage() {
                 </p>
               </div>
               <ChevronRight size={18} color="var(--text-muted)" />
+            </div>
+
+            <div className="card-ghost mb-4" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: "var(--primary-pale)", display: "flex",
+                  alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}
+              >
+                <Bell size={18} color="var(--primary-dark)" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p className="font-semibold text-sm">Notificaciones push</p>
+                <p className="text-muted text-xs">
+                  {!pushSupported
+                    ? "No disponibles en este navegador"
+                    : pushSubscribed
+                      ? "Activadas"
+                      : "Desactivadas"}
+                </p>
+              </div>
+              <Button
+                variant={pushSubscribed ? "ghost" : "primary"}
+                size="sm"
+                loading={pushBusy}
+                disabled={!pushSupported}
+                onClick={handleTogglePush}
+              >
+                {pushSubscribed ? "Desactivar" : "Activar"}
+              </Button>
             </div>
 
             <Button variant="danger" fullWidth loading={signingOut} onClick={handleSignOut}>
