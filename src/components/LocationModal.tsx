@@ -378,6 +378,13 @@ export default function LocationModal({
               options={{ language: "es", country: "co", types: "address,poi,neighborhood,postcode,district,place" }}
               placeholder={mode === "origin" ? "Escribe tu dirección de origen..." : "Escribe la dirección de destino..."}
               theme={searchBoxTheme}
+              // Must stay controlled: SearchBox's internal effects key off `ref.current`
+              // in their dependency arrays, which flips from undefined to the DOM node
+              // on the render right after the first keystroke — re-running the value-sync
+              // effect and wiping the input back to `value` at that moment. Uncontrolled
+              // (value always undefined), that wipe drops the first character; controlled,
+              // it just re-applies the character that was already typed.
+              value={mode === "origin" ? originAddress : destText}
               onChange={(val) => {
                 if (mode === "origin") { setOriginAddress(val); setOriginCoords(null); }
                 else { setDestText(val); setDestPin(null); }
