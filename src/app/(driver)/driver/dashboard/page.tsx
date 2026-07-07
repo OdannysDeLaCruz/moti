@@ -90,6 +90,17 @@ export default function DriverDashboardPage() {
       });
       setModalError("");
       setSelectedRideId(e.rideId);
+
+      api
+        .get<Ride>(`/api/rides/${e.rideId}`)
+        .then(({ data }) => {
+          setRides((prev) =>
+            prev.map((r) => (r.id === e.rideId ? { ...r, client: data.client } : r)),
+          );
+        })
+        .catch(() => {
+          // noop — keep placeholder name if fetch fails
+        });
     },
     onRideAccepted: (rideId: string) => {
       router.push(`/driver/ongoing/${rideId}`);
