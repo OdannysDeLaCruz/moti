@@ -35,6 +35,7 @@ export default function AdminClientsPage() {
 
   useEffect(() => {
     const id = ++requestId.current;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     load(search, 0)
       .then(({ data }) => {

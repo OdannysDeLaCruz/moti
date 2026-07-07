@@ -56,6 +56,7 @@ export default function AdminRidesPage() {
 
   useEffect(() => {
     const id = ++requestId.current;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     load(filter, search, 0)
       .then(({ data }) => {

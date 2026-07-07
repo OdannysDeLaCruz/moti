@@ -24,10 +24,6 @@ export default function AdminCommissionsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [toastKey, setToastKey] = useState(0);
 
-  useEffect(() => {
-    loadDrivers();
-  }, []);
-
   function loadDrivers() {
     setLoading(true);
     api
@@ -36,6 +32,11 @@ export default function AdminCommissionsPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadDrivers();
+  }, []);
 
   function showToast(msg: string, ok: boolean) {
     setToast({ msg, ok });

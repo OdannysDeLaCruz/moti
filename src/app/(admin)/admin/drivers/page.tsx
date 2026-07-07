@@ -47,6 +47,7 @@ export default function AdminDriversPage() {
 
   useEffect(() => {
     const id = ++requestId.current;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     load(status, search, 0)
       .then(({ data }) => {
