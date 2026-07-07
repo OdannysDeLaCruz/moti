@@ -25,6 +25,8 @@ interface LocationModalProps {
   onConfirmOrigin: (point: LocationPoint) => void;
   onConfirmDest: (text: string, pin: { lat: number; lng: number } | null) => void;
   onClose: () => void;
+  recentOrigins?: LocationPoint[];
+  recentDestinations?: LocationPoint[];
 }
 
 function getNombreLegible(features: ReverseFeature[]): string {
@@ -139,6 +141,8 @@ export default function LocationModal({
   onConfirmOrigin,
   onConfirmDest,
   onClose,
+  recentOrigins = [],
+  recentDestinations = [],
 }: LocationModalProps) {
   const isOpen = mode !== null;
 
@@ -371,6 +375,7 @@ export default function LocationModal({
             </div>
           </div>
         ) : (
+          <>
           <div key={mode} style={{ position: "relative", width: "100%" }}>
             <SearchBox
               ref={searchBoxRef}
@@ -392,7 +397,6 @@ export default function LocationModal({
               onRetrieve={(result) => {
                 const feature = result?.features?.[0];
                 if (!feature) return;
-                console.log(feature)
                 const [lng, lat] = feature.geometry.coordinates;
                 const name = `${feature.properties.name} ${feature.properties.full_address}` || feature.properties.place_formatted;
                 if (mode === "origin") { setOriginAddress(name); setOriginCoords({ lat, lng }); }
@@ -400,6 +404,35 @@ export default function LocationModal({
               }}
             />
           </div>
+
+          {/*
+            Intencionalmente NO filtrado por originAddress/destText — esta lista
+            siempre muestra el historial completo de direcciones de carreras
+            completadas mientras este modo está activo, tanto al abrir el modal
+            como mientras se escribe. No agregar filtrado difuso aquí sin
+            revisar el spec de nuevo.
+          */}
+          {(mode === "origin" ? recentOrigins : recentDestinations).length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {(mode === "origin" ? recentOrigins : recentDestinations).slice(0, 5).map((p) => (
+                <button
+                  key={p.address}
+                  type="button"
+                  onClick={() => mode === "origin" ? onConfirmOrigin(p) : onConfirmDest(p.address, { lat: p.lat, lng: p.lng })}
+                  style={{
+                    width: "100%", textAlign: "left", padding: "12px 14px",
+                    borderRadius: "var(--r-md)", border: "1.5px solid var(--border-strong)",
+                    background: "var(--surface)", color: "var(--text)",
+                    fontFamily: "inherit", fontSize: "14px", cursor: "pointer",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                  }}
+                >
+                  📍 {p.address}
+                </button>
+              ))}
+            </div>
+          )}
+          </>
         )}
 
         <button type="button" onClick={handleConfirm} disabled={!canConfirm}

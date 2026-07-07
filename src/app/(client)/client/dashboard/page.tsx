@@ -43,6 +43,8 @@ export default function ClientDashboardPage() {
   const [rideType, setRideType] = useState<RideType>("TRANSPORT");
   const [origin, setOrigin] = useState<LocationPoint | null>(null);
   const [dest, setDest] = useState<LocationPoint | null>(null);
+  const [recentOrigins, setRecentOrigins] = useState<LocationPoint[]>([]);
+  const [recentDestinations, setRecentDestinations] = useState<LocationPoint[]>([]);
   const [price, setPrice] = useState(5000);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -91,6 +93,12 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     api.get<{ balance: number }>("/api/cashback/me")
       .then(({ data }) => setCashbackBalance(data.balance))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    api.get<{ origins: LocationPoint[]; destinations: LocationPoint[] }>("/api/rides/recent-addresses")
+      .then(({ data }) => { setRecentOrigins(data.origins); setRecentDestinations(data.destinations); })
       .catch(() => {});
   }, []);
 
@@ -271,6 +279,8 @@ export default function ClientDashboardPage() {
         onConfirmOrigin={(point) => { setOrigin(point); setModalMode(null); setSheetExpanded(false); setTimeout(() => setSheetExpanded(true), 3000); }}
         onConfirmDest={(text, pin) => { setDest(pin ? { lat: pin.lat, lng: pin.lng, address: text } : null); setModalMode(null); setSheetExpanded(false); setTimeout(() => setSheetExpanded(true), 3000); }}
         onClose={() => setModalMode(null)}
+        recentOrigins={recentOrigins}
+        recentDestinations={recentDestinations}
       />
 
       {/* ─── Fullscreen map ──────────────────────────────────── */}
