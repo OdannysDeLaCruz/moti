@@ -1,3 +1,6 @@
+# Claude Code Agent Lang
+Español, siempre.
+
 # AGENTS.md — moti (Next.js PWA)
 
 ## Project Overview
