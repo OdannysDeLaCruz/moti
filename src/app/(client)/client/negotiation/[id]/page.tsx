@@ -13,6 +13,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useRideSocket, DriverLocationEvent } from "@/hooks/useRideSocket";
 import { playNewOffer, playStatusPositive, playStatusNegative } from "@/lib/sounds";
 import RideProgressAnimation from "@/components/RideProgressAnimation";
+import DriverProfileModal from "@/components/DriverProfileModal";
 import { MapPin, Navigation, CheckCircle, Bike, Flag, FileText } from "lucide-react";
 import Image from "next/image";
 
@@ -24,6 +25,13 @@ export enum RideOfferStatus {
   REJECTED = "REJECTED",
 }
 
+interface DriverProfileSummary {
+  profilePhotoUrl?: string | null;
+  vehiclePlate?: string | null;
+  vehicleModel?: string | null;
+  vehicleType?: string | null;
+}
+
 interface Offer {
   id: string;
   status: RideOfferStatus;
@@ -31,7 +39,7 @@ interface Offer {
   driverId: string;
   driverName?: string;
   driverPhone?: string;
-  driver?: { fullName: string; phone: string; driverProfile?: { profilePhotoUrl?: string | null } | null };
+  driver?: { id: string; fullName: string; phone: string; driverProfile?: DriverProfileSummary | null };
   createdAt: string;
 }
 
@@ -51,9 +59,10 @@ interface Ride {
   rideType: "TRANSPORT" | "DELIVERY";
   notes?: string | null;
   driver: {
+    id: string;
     fullName: string;
     phone: string;
-    driverProfile?: { profilePhotoUrl?: string | null } | null;
+    driverProfile?: DriverProfileSummary | null;
   } | null;
   offers: Offer[];
 }
@@ -95,6 +104,7 @@ export default function NegotiationPage() {
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(true);
+  const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
   const dragStartY = useRef<number | null>(null);
 
   const fetchRide = useCallback(async () => {
@@ -368,10 +378,17 @@ export default function NegotiationPage() {
                     {pendingOffers.map((offer) => {
                       const name = offer.driver?.fullName ?? "";
                       const photo = offer.driver?.driverProfile?.profilePhotoUrl;
+                      const plate = offer.driver?.driverProfile?.vehiclePlate;
+                      const vehicleModel = offer.driver?.driverProfile?.vehicleModel;
+                      const vehicleType = offer.driver?.driverProfile?.vehicleType;
+                      const vehicleLabel = vehicleType === "BICI" ? "Bicicleta" : vehicleType === "MOTO" ? "Moto" : undefined;
                       const initials = name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
                       return (
                         <div key={offer.id} className="card" style={{ padding: "16px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                          <div
+                            style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px", cursor: "pointer" }}
+                            onClick={() => setSelectedDriverId(offer.driverId)}
+                          >
                             {photo ? (
                               <Image
                                 src={photo}
@@ -391,9 +408,16 @@ export default function NegotiationPage() {
                               </div>
                             )}
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <p className="font-semibold text-md" style={{ marginBottom: "2px" }}>
-                                {name.split(" ")[0] || "Conductor"} ofreció
+                              <p className="font-semibold text-md" style={{ marginBottom: "2px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                                {name || "Conductor"} ofreció
+                                {plate && <span className="badge badge-neutral">{plate}</span>}
                               </p>
+                              {(vehicleLabel || vehicleModel) && (
+                                <p className="text-xs text-muted" style={{ marginBottom: "4px", display: "flex", alignItems: "center", gap: "4px" }}>
+                                  <Bike size={11} />
+                                  {[vehicleLabel, vehicleModel].filter(Boolean).join(" · ")}
+                                </p>
+                              )}
                               <span className="price-tag-accent" style={{ fontSize: "20px" }}>
                                 {formatCOP(offer.counterPrice)}
                               </span>
@@ -457,7 +481,10 @@ export default function NegotiationPage() {
                       </p>
                     </div>
                   </div>
-                  <div style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div
+                    style={{ borderTop: "1px solid var(--border)", paddingTop: "12px", display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}
+                    onClick={() => setSelectedDriverId(ride.driver!.id)}
+                  >
                     {ride.driver.driverProfile?.profilePhotoUrl ? (
                       <Image
                         src={ride.driver.driverProfile.profilePhotoUrl}
@@ -479,6 +506,15 @@ export default function NegotiationPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p className="text-xs text-muted">Conductor</p>
                       <p style={{ fontWeight: 600, fontSize: "15px" }}>{ride.driver.fullName}</p>
+                      {(ride.driver.driverProfile?.vehiclePlate || ride.driver.driverProfile?.vehicleModel || ride.driver.driverProfile?.vehicleType) && (
+                        <p className="text-xs text-muted" style={{ marginTop: "2px" }}>
+                          {[
+                            ride.driver.driverProfile?.vehicleType === "BICI" ? "Bicicleta" : ride.driver.driverProfile?.vehicleType === "MOTO" ? "Moto" : null,
+                            ride.driver.driverProfile?.vehicleModel,
+                            ride.driver.driverProfile?.vehiclePlate ? `Placa ${ride.driver.driverProfile.vehiclePlate}` : null,
+                          ].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -553,6 +589,35 @@ export default function NegotiationPage() {
                     </div>
                     <p style={{ fontWeight: 700, fontSize: "16px", color: "var(--success)" }}>¡Carrera completada!</p>
                   </div>
+                  {ride.driver && (
+                    <div
+                      style={{ borderTop: "1px solid var(--border)", marginTop: "12px", paddingTop: "12px", display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}
+                      onClick={() => setSelectedDriverId(ride.driver!.id)}
+                    >
+                      {ride.driver.driverProfile?.profilePhotoUrl ? (
+                        <Image
+                          src={ride.driver.driverProfile.profilePhotoUrl}
+                          alt={ride.driver.fullName}
+                          width={40}
+                          height={40}
+                          style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "2px solid var(--success)" }}
+                        />
+                      ) : (
+                        <div style={{
+                          width: 40, height: 40, borderRadius: "50%", background: "var(--success-pale)",
+                          border: "2px solid var(--success)", display: "flex", alignItems: "center",
+                          justifyContent: "center", fontSize: "15px", fontWeight: 700,
+                          color: "var(--success)", flexShrink: 0,
+                        }}>
+                          {driverInitials}
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontWeight: 600, fontSize: "14px" }}>{ride.driver.fullName}</p>
+                        <p className="text-xs text-muted">Ver conductor</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -598,6 +663,20 @@ export default function NegotiationPage() {
           </div>
         </div>
       </div>
+
+      {selectedDriverId && (() => {
+        const matchedOffer = ride.offers.find((o) => o.driverId === selectedDriverId);
+        const fallbackDriver = ride.driver?.id === selectedDriverId ? ride.driver : matchedOffer?.driver;
+        return (
+          <DriverProfileModal
+            rideId={id}
+            driverId={selectedDriverId}
+            fallbackName={fallbackDriver?.fullName}
+            fallbackPhotoUrl={fallbackDriver?.driverProfile?.profilePhotoUrl}
+            onClose={() => setSelectedDriverId(null)}
+          />
+        );
+      })()}
     </>
   );
 }
