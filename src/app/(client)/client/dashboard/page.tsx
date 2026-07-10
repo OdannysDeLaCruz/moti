@@ -10,6 +10,7 @@ import api from "@/lib/api-client";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useAuth } from "@/lib/auth-context";
 import type { LocationPoint } from "@/components/LocationModal";
+import ServiceTypeChoice, { RIDE_TYPE_META, type RideType } from "./components/ServiceTypeChoice";
 import { User, Home, ClipboardList, Bike, Menu, FileText, LogOut } from "lucide-react";
 import Image from "next/image";
 
@@ -18,11 +19,6 @@ const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
 const PRICE_STEP = 500;
 const MIN_PRICE = 4000;
-const RIDE_TYPES = [
-  { value: "TRANSPORT", label: "Transporte", desc: "Transporte de persona" },
-  { value: "DELIVERY", label: "Envíos", desc: "Domicilio de paquetes" },
-] as const;
-type RideType = "TRANSPORT" | "DELIVERY";
 const ACTIVE_STATUSES = ["PENDING", "NEGOTIATING", "ACCEPTED", "IN_PROGRESS"];
 
 interface ActiveRide {
@@ -30,7 +26,7 @@ interface ActiveRide {
   originAddress: string;
   destAddress: string;
   status: string;
-  rideType: "TRANSPORT" | "DELIVERY";
+  rideType: RideType;
 }
 
 export default function ClientDashboardPage() {
@@ -40,7 +36,7 @@ export default function ClientDashboardPage() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"origin" | "dest" | null>(null);
-  const [rideType, setRideType] = useState<RideType>("TRANSPORT");
+  const [rideType, setRideType] = useState<RideType | null>(null);
   const [origin, setOrigin] = useState<LocationPoint | null>(null);
   const [dest, setDest] = useState<LocationPoint | null>(null);
   const [recentOrigins, setRecentOrigins] = useState<LocationPoint[]>([]);
@@ -49,6 +45,7 @@ export default function ClientDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeRide, setActiveRide] = useState<ActiveRide | null>(null);
+  const [activeRideChecked, setActiveRideChecked] = useState(false);
   const [note, setNote] = useState("");
   const [noteModal, setNoteModal] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
@@ -82,6 +79,8 @@ export default function ClientDashboardPage() {
         }
       } catch {
         // noop
+      } finally {
+        if (!ignore) setActiveRideChecked(true);
       }
     })();
 
@@ -112,6 +111,7 @@ export default function ClientDashboardPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!rideType) { setError("Selecciona un tipo de servicio."); return; }
     if (!origin) { setError("Indica tu punto de origen."); return; }
     if (!dest) { setError("Escribe o selecciona el destino."); return; }
     setError("");
@@ -152,6 +152,8 @@ export default function ClientDashboardPage() {
     ...(origin ? [{ lat: origin.lat, lng: origin.lng, label: "Origen", color: "green" as const }] : []),
     ...(dest ? [{ lat: dest.lat, lng: dest.lng, label: "Destino", color: "red" as const }] : []),
   ];
+
+  const rideTypeMeta = rideType ? RIDE_TYPE_META[rideType] : null;
 
   return (
     <>
@@ -363,8 +365,10 @@ export default function ClientDashboardPage() {
         </div>
       )}
 
-      {/* ─── Bottom sheet (form) ─────────────────────────────── */}
-      {!activeRide && (
+      {/* ─── Service type choice / Bottom sheet (form) ────────── */}
+      {activeRideChecked && !activeRide && (rideType === null ? (
+        <ServiceTypeChoice onSelect={setRideType} />
+      ) : (
         <div style={{
           position: "fixed", bottom: 0, left: 0, right: 0,
           zIndex: 300, display: "flex", justifyContent: "center",
@@ -390,26 +394,31 @@ export default function ClientDashboardPage() {
               <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--border-strong)" }} />
             </div>
 
-            <form onSubmit={handleSubmit} style={{ padding: "4px 16px 24px" }}>
-              {/* ── Ride type ── */}
-              <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
-                {RIDE_TYPES.map((t) => (
-                  <button key={t.value} type="button" onClick={() => setRideType(t.value)}
-                    style={{
-                      flex: 1, padding: "10px 8px",
-                      borderRadius: "var(--r-md)",
-                      border: `2px solid ${rideType === t.value ? "var(--primary)" : "var(--border)"}`,
-                      background: rideType === t.value ? "var(--primary-xpale)" : "var(--surface)",
-                      cursor: "pointer", fontFamily: "inherit", textAlign: "center",
-                    }}>
-                    <div style={{ fontSize: "13px", fontWeight: 700, color: rideType === t.value ? "var(--primary)" : "var(--text-secondary)" }}>
-                      {t.label}
-                    </div>
-                    <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{t.desc}</div>
-                  </button>
-                ))}
+            {/* ── Selected service type — back to choice screen ── */}
+            {rideTypeMeta && (
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "0 16px 10px",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <rideTypeMeta.Icon size={16} style={{ color: "var(--text-secondary)" }} />
+                  <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    {rideTypeMeta.label}
+                  </span>
+                </div>
+                <button type="button" disabled={loading} onClick={() => setRideType(null)}
+                  style={{
+                    background: "none", border: "none",
+                    cursor: loading ? "default" : "pointer",
+                    fontFamily: "inherit", fontSize: "11px", fontWeight: 700,
+                    color: loading ? "var(--text-muted)" : "var(--primary)",
+                  }}>
+                  Cambiar
+                </button>
               </div>
+            )}
 
+            <form onSubmit={handleSubmit} style={{ padding: "4px 16px 24px" }}>
               {/* ── Origin / Dest pills ── */}
               <div style={{
                 background: "var(--bg)", borderRadius: "var(--r-lg)",
@@ -591,6 +600,8 @@ export default function ClientDashboardPage() {
                     )}
                   </button>
 
+                  {/* Futuro: campos específicos por rideType van aquí, p. ej. switch(rideType) { case "DELIVERY": <PackagePhotoUpload/> } */}
+
                   {error && <div className="alert alert-error mb-3" role="alert">{error}</div>}
                 </>
               )}
@@ -609,7 +620,7 @@ export default function ClientDashboardPage() {
             </form>
           </div>
         </div>
-      )}
+      ))}
     </>
   );
 }
