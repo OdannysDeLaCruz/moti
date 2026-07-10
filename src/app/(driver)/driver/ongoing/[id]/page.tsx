@@ -122,6 +122,19 @@ export default function OngoingRidePage() {
     setUpdating(false);
   }
 
+  async function startRoute() {
+    setUpdating(true);
+    try {
+      await api.patch(`/api/rides/${id}`, { status: "IN_PROGRESS" });
+      // Reload after the status update completes so the map re-mounts with
+      // the destination route — Mapbox sometimes fails to redraw the route
+      // on a pure state transition to IN_PROGRESS.
+      window.location.reload();
+    } catch {
+      setUpdating(false);
+    }
+  }
+
   async function cancelRide() {
     setCancelling(true);
     try {
@@ -310,7 +323,7 @@ export default function OngoingRidePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {isAccepted  && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("HEADING_TO_PICKUP")}>Voy en camino</Button>}
               {isHeading   && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("AT_PICKUP")}>Ya estoy aquí</Button>}
-              {isAtPickup  && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={() => updateStatus("IN_PROGRESS")}>Empezar ruta</Button>}
+              {isAtPickup  && <Button variant="primary" fullWidth size="lg" loading={updating} onClick={startRoute}>Empezar ruta</Button>}
               {isInProgress && <Button variant="success" fullWidth size="lg" loading={updating} onClick={() => updateStatus("COMPLETED")}>Terminar ruta</Button>}
 
               {canCancel && (!confirmCancel ? (
