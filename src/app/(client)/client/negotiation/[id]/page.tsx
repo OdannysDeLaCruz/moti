@@ -14,6 +14,7 @@ import { useRideSocket, DriverLocationEvent } from "@/hooks/useRideSocket";
 import { playNewOffer, playStatusPositive, playStatusNegative } from "@/lib/sounds";
 import RideProgressAnimation from "@/components/RideProgressAnimation";
 import DriverProfileModal from "@/components/DriverProfileModal";
+import CashbackEarnedOverlay from "@/components/CashbackEarnedOverlay";
 import { MapPin, Navigation, CheckCircle, Bike, Flag, FileText } from "lucide-react";
 import Image from "next/image";
 
@@ -74,6 +75,12 @@ const DRIVER_STATUS_INFO: Record<string, { icon: React.ReactNode; title: string;
   IN_PROGRESS: { icon: <Bike size={28} color="var(--primary)" />, title: "Viaje en curso", subtitle: "Estás en camino a tu destino" },
 };
 
+interface CashbackTransaction {
+  rideRequestId: string | null;
+  type: "EARN" | "REDEEM" | "REFUND";
+  amount: number;
+}
+
 interface ToastState {
   type: "success" | "info" | "error";
   icon: string;
@@ -103,6 +110,7 @@ export default function NegotiationPage() {
   const [error, setError] = useState("");
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [cashbackEarned, setCashbackEarned] = useState<{ amount: number; balance: number } | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(true);
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
   const dragStartY = useRef<number | null>(null);
@@ -121,6 +129,23 @@ export default function NegotiationPage() {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void fetchRide(); }, [fetchRide]);
+
+  const showCashbackOrToast = useCallback(async () => {
+    try {
+      const [{ data: history }, { data: summary }] = await Promise.all([
+        api.get<{ items: CashbackTransaction[] }>("/api/cashback/me/history", { params: { skip: 0, take: 10 } }),
+        api.get<{ balance: number }>("/api/cashback/me"),
+      ]);
+      const earnTx = history.items?.find((tx) => tx.rideRequestId === id && tx.type === "EARN");
+      if (earnTx && earnTx.amount > 0) {
+        setCashbackEarned({ amount: earnTx.amount, balance: summary.balance });
+        return;
+      }
+    } catch {
+      // fall through to the regular toast
+    }
+    setToast(STATUS_TOAST.COMPLETED);
+  }, [id]);
 
   useRideSocket(id, {
     onOffer: () => { playNewOffer(); fetchRide(); },
@@ -147,6 +172,11 @@ export default function NegotiationPage() {
       if (status === "IN_PROGRESS") setSheetExpanded(false);
       if (status === "COMPLETED" || status === "CANCELLED") {
         setDriverLocation(null);
+      }
+      if (status === "COMPLETED") {
+        playStatusPositive();
+        void showCashbackOrToast();
+        return;
       }
       const toastData = STATUS_TOAST[status];
       if (toastData) {
@@ -273,6 +303,22 @@ export default function NegotiationPage() {
 
   return (
     <>
+      {cashbackEarned && (
+        <CashbackEarnedOverlay
+          amountEarned={cashbackEarned.amount}
+          newBalance={cashbackEarned.balance}
+          onDismiss={() => setCashbackEarned(null)}
+          onContinue={() => {
+            setCashbackEarned(null);
+            router.push("/client/dashboard");
+          }}
+          onViewCashback={() => {
+            setCashbackEarned(null);
+            router.push("/client/cashback");
+          }}
+        />
+      )}
+
       {toast && (
         <div style={{ position: "fixed", zIndex: 9999, top: 0, left: 0, right: 0 }}>
           <Toast
